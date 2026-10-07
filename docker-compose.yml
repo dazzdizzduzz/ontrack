@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  # 1. Database PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: ontrack_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: ontrack_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # 2. Local Object Storage (S3-Compatible) untuk Foto/Lampiran
+  minio:
+    image: minio/minio:latest
+    container_name: ontrack_minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: adminpassword
+    # Port 9000 untuk API, Port 9001 untuk Dashboard Web
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+  # 3. Backend (Golang + Gin)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ontrack_backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=db
+      - DB_USER=admin
+      - DB_PASSWORD=adminpassword
+      - DB_NAME=ontrack_db
+      - DB_PORT=5432
+      # Credential untuk diakses oleh kode Golang Backend
+      - S3_ENDPOINT=minio:9000
+      - S3_ACCESS_KEY=admin
+      - S3_SECRET_KEY=adminpassword
+      - S3_BUCKET_NAME=ontrack-bucket
+    depends_on:
+      - db
+      - minio
+
+  # 4. Frontend Web (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ontrack_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  miniodata:
