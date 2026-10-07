@@ -1,14 +1,40 @@
-name: CI/CD Pipeline On-Track
+name: On-Track CI/CD Pipeline
 
+on:
   pull_request:
     branches:
-      - main
       - staging
+      - main
+  push:
+    branches:
+      - staging
+      - main
 
 jobs:
-  # 1. Job untuk memeriksa kode Backend (Golang)
+  # ==========================================
+  # VALIDASI ATURAN BRANCH (GATES)
+  # ==========================================
+  branch-validation:
+    name: Validate PR Branch Rules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR Source Branch for Main
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+        run: |
+          # Memastikan PR ke 'main' HANYA boleh berasal dari 'staging'
+          if [ "${{ github.head_ref }}" != "staging" ]; then
+            echo "ERROR: Direct PR to 'main' from '${{ github.head_ref }}' is forbidden!"
+            echo "PR to 'main' must only come from the 'staging' branch."
+            exit 1
+          fi
+          echo "Branch rule validation passed: PR comes from staging."
+
+  # ==========================================
+  # TAHAP 1: AUTOMATED TESTING
+  # ==========================================
   backend-test:
-    name: Backend Lint & Test
+    name: Backend Unit & Integration Test
+    needs: branch-validation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -17,21 +43,19 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
-          
+          go-version: "1.21"
+
       - name: Run Backend Tests
         working-directory: ./backend
         run: |
-          echo "Menjalankan Unit Test Golang..."
-          # CATATAN: Baris di bawah ini dikomentari sementara karena tim BE belum menaruh kode.
-          # Hapus tanda pagar (#) jika tim BE sudah selesai membuat boilerplate.
+          echo "Menjalankan Pengujian Backend (Golang)..."
           # go mod tidy
           # go test -v ./...
-          echo "Backend Passed!"
+          echo "Backend Test Passed!"
 
-  # 2. Job untuk memeriksa kode Frontend (Next.js)
   frontend-test:
-    name: Frontend Lint & Test
+    name: Frontend Lint & Unit Test
+    needs: branch-validation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -40,10 +64,45 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
 
       - name: Run Frontend Tests
         working-directory: ./frontend
         run: |
-          echo "Menjalankan Linting dan Test Next.js..."
-          echo "Frontend Passed!"
+          echo "Menjalankan Pengujian Frontend (Next.js)..."
+          # npm install
+          # npm run lint
+          # npm run test
+          echo "Frontend Test Passed!"
+
+  # ==========================================
+  # TAHAP 2: DEPLOYMENT KE STAGING
+  # ==========================================
+  deploy-staging:
+    name: Deploy to Staging Environment
+    needs: [backend-test, frontend-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploying to Staging Server
+        run: |
+          echo "Memulai otomatisasi rilis ke Staging Server..."
+
+  # ==========================================
+  # TAHAP 3: DEPLOYMENT KE MAIN (PRODUCTION)
+  # ==========================================
+  deploy-main:
+    name: Deploy to Production (Main)
+    needs: [backend-test, frontend-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploying to Production Server
+        run: |
+          echo "Memulai otomatisasi rilis ke Production Server..."
