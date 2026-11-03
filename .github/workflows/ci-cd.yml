@@ -30,10 +30,10 @@ jobs:
           echo "Branch rule validation passed: PR comes from staging."
 
   # ==========================================
-  # TAHAP 1: AUTOMATED TESTING
+  # TAHAP 1: LINTER & AUTOMATED TESTING
   # ==========================================
   backend-test:
-    name: Backend Unit & Integration Test
+    name: Backend Lint & Unit Test
     needs: branch-validation
     runs-on: ubuntu-latest
     steps:
@@ -44,6 +44,17 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.21"
+
+      - name: Run GolangCI-Lint (Graceful)
+        run: |
+          if [ -f "backend/go.mod" ]; then
+            echo "Menemukan go.mod, menginstal dan menjalankan golangci-lint..."
+            cd backend
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
+            $(go env GOPATH)/bin/golangci-lint run ./...
+          else
+            echo "Tim BE belum melakukan inisialisasi kode. Linter dilewati."
+          fi
 
       - name: Run Backend Tests
         working-directory: ./backend
@@ -66,12 +77,21 @@ jobs:
         with:
           node-version: "18"
 
+      - name: Run ESLint (Graceful)
+        run: |
+          if [ -f "frontend/package.json" ]; then
+            echo "Menemukan package.json, menginstal dan menjalankan eslint..."
+            cd frontend
+            npm install
+            npm run lint
+          else
+            echo "Tim FE belum melakukan inisialisasi kode. Linter dilewati."
+          fi
+
       - name: Run Frontend Tests
         working-directory: ./frontend
         run: |
           echo "Menjalankan Pengujian Frontend (Next.js)..."
-          # npm install
-          # npm run lint
           # npm run test
           echo "Frontend Test Passed!"
 
