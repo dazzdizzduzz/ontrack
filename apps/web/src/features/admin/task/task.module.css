@@ -1,0 +1,385 @@
+/* W06 / W46: header dengan tiga aksi di kanan. */
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-12);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+}
+
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+/* Toggle Kanban / Daftar. Figma: radius 10/8 px dan jarak 6 px, dibulatkan ke skala 4. */
+.segmented {
+  display: inline-flex;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-12);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: var(--type-label-s-font);
+  letter-spacing: var(--type-label-s-tracking);
+  cursor: pointer;
+}
+
+.segment[aria-pressed='true'] {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 1px;
+}
+
+/* W06: empat kolom Kanban. */
+.board {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: var(--space-16);
+  overflow-x: auto;
+}
+
+.column {
+  display: flex;
+  min-height: 480px;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-subtle);
+}
+
+.columnHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-4);
+}
+
+.columnTitle {
+  margin: 0;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.count {
+  padding: var(--space-2) var(--space-8);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  font: var(--type-label-s-font);
+  letter-spacing: var(--type-label-s-tracking);
+}
+
+.columnEmpty {
+  margin: 0;
+  padding: var(--space-8) var(--space-4);
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+/* W46: tabel daftar task. */
+.table th:first-child,
+.table td:first-child {
+  width: auto;
+}
+
+.colProject {
+  width: 160px;
+}
+
+.colPerson {
+  width: 200px;
+}
+
+.colPriority,
+.colDue {
+  width: 120px;
+}
+
+.colStatus {
+  width: 140px;
+}
+
+.strong {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.person {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.late {
+  color: var(--color-status-danger-fg);
+}
+
+.rowNew {
+  background: var(--color-accent-subtle);
+}
+
+/* W10 / W48: formulir dua kolom. */
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: var(--space-12);
+}
+
+.fieldLabel {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.priority,
+.attach,
+.members {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+/* Label "Prioritas" diturunkan agar chip sejajar dengan kolom input di sebelahnya. */
+.priority {
+  padding-top: var(--space-4);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+/* Tiga chip prioritas muat dalam kolom 250 px seperti Figma. */
+.priority .chips {
+  gap: var(--space-4);
+}
+
+.memberLabel {
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.upload {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-16);
+  border: 1px dashed var(--color-border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+  cursor: pointer;
+}
+
+.upload:focus-within {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.uploadIcon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-surface);
+}
+
+.file {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+}
+
+.fileText {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fileName {
+  overflow: hidden;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileMeta {
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-target);
+  height: var(--size-icon-target);
+  margin: calc(-1 * var(--space-12));
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  cursor: pointer;
+}
+
+.remove:hover {
+  background: var(--color-bg-hover);
+}
+
+.error {
+  color: var(--color-status-danger-fg);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+/* W47: kartu proyek dua kolom. Figma radius 16 px → token lg. */
+.projects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-16);
+}
+
+.project {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-20);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.projectClient {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+  text-transform: uppercase;
+}
+
+.projectName {
+  margin: 0;
+  font: var(--type-heading-h3-font);
+  letter-spacing: var(--type-heading-h3-tracking);
+}
+
+.projectDescription,
+.progressRow {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.progressRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.progressValue {
+  color: var(--color-text-primary);
+  font: var(--type-label-s-font);
+  letter-spacing: var(--type-label-s-tracking);
+}
+
+.bar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-subtle);
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-default);
+}
+
+.projectFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.team {
+  display: inline-flex;
+}
+
+/* Avatar tim saling tumpang 6 px seperti Figma. */
+.team > * + * {
+  margin-left: -6px;
+}
+
+.target {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+@media (max-width: 1023px) {
+  .board {
+    grid-template-columns: repeat(4, 260px);
+  }
+
+  .projects,
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}

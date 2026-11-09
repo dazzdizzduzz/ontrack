@@ -12,6 +12,11 @@
   border: 1.5px solid var(--color-status-danger-fg);
 }
 
+/* W50: garis aksen 1,5 px pada task yang baru dibuat. */
+.highlight {
+  border: 1.5px solid var(--color-accent-hover);
+}
+
 .row {
   display: flex;
   align-items: center;
@@ -19,8 +24,16 @@
   gap: var(--space-8);
 }
 
+.row > :last-child {
+  flex: none;
+}
+
 .client {
+  min-width: 0;
+  overflow: hidden;
   color: var(--color-text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font: var(--type-label-s-font);
   letter-spacing: var(--type-label-s-tracking);
   text-transform: uppercase;

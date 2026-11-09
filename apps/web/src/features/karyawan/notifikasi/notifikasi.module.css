@@ -1,0 +1,166 @@
+/* KW25: lonceng 44×44 di header (sama dengan gaya lama di beranda). */
+.bell {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-target);
+  height: var(--size-icon-target);
+  padding: 0;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-surface);
+  cursor: pointer;
+}
+
+.bell:hover {
+  background: var(--color-bg-hover);
+}
+
+.bell:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+/* Popover 400 px di bawah lonceng, rata kanan dengan lonceng. */
+.popover {
+  position: fixed;
+  left: auto;
+  bottom: auto;
+  width: min(400px, calc(100vw - 2 * var(--space-16)));
+  max-height: min(652px, calc(100dvh - 120px));
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-menu);
+  color: var(--color-text-primary);
+}
+
+.popover[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.popover::backdrop {
+  background: var(--color-bg-scrim);
+}
+
+.header {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-16) var(--space-8);
+}
+
+.title {
+  margin: 0;
+  outline: none;
+  font: var(--type-heading-h3-font);
+  letter-spacing: var(--type-heading-h3-tracking);
+}
+
+.count {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.list {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: var(--space-12);
+  padding: var(--space-16);
+  border: 0;
+  border-bottom: 1px solid var(--color-border-default);
+  background: var(--color-bg-surface);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: var(--color-bg-hover);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: -2px;
+}
+
+.unread,
+.unread:hover {
+  background: var(--color-accent-subtle);
+}
+
+.iconWrap {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-surface);
+}
+
+.text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.itemTitle {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.body {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.time {
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+}
+
+.dotUnread {
+  background: var(--color-status-danger-fg);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

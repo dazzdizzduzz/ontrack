@@ -1,0 +1,106 @@
+/* W03: lebar kolom mengikuti Figma; gaya tabel dasar dari daftar karyawan (W15). */
+.table th:first-child,
+.table td:first-child {
+  width: 260px;
+}
+
+.colType {
+  width: 120px;
+}
+
+.colDate {
+  width: 200px;
+}
+
+.colDuration {
+  width: 100px;
+}
+
+.colStatus {
+  width: 140px;
+}
+
+.table tbody tr:hover {
+  background: var(--color-bg-subtle);
+}
+
+.actions {
+  display: inline-flex;
+  gap: var(--space-8);
+}
+
+/* Nama karyawan membuka drawer W40; tampil seperti teks nama biasa. */
+.nameButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+  text-align: left;
+  cursor: pointer;
+}
+
+.nameButton:hover {
+  text-decoration: underline;
+}
+
+.nameButton:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+  border-radius: var(--space-4);
+}
+
+/* W40: drawer detail. */
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+}
+
+.statusText {
+  margin: 0;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.sectionLabel {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-label-s-font);
+  letter-spacing: var(--type-label-s-tracking);
+}
+
+.detail {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  margin: 0;
+  /* Figma 6/10 px; dibulatkan ke skala spasi 4, sama dengan panel detail lembur W94. */
+  padding: var(--space-8) var(--space-16);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+}
+
+.detailRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-16);
+  padding: var(--space-8) 0;
+}
+
+.detailRow dt {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.detailRow dd {
+  margin: 0;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+  text-align: right;
+  white-space: pre-line;
+}

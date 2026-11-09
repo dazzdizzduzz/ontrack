@@ -3,20 +3,45 @@ import { Avatar } from './Avatar';
 import { Badge } from './Badge';
 import styles from './TaskCard.module.css';
 
+type TaskCardStatus = 'todo' | 'in_progress' | 'review' | 'done';
+
 type TaskCardProps = {
   client: string;
   title: string;
   due: string;
   assignee: string;
   overdue?: boolean;
+  /** Status di badge; bawaan "In progress" seperti beranda karyawan (KW08). */
+  status?: TaskCardStatus;
+  /** W50: task yang baru dibuat diberi garis aksen. */
+  highlight?: boolean;
 };
 
-export function TaskCard({ client, title, due, assignee, overdue = false }: TaskCardProps) {
+const badges: Record<TaskCardStatus, { tone: 'neutral' | 'warning' | 'success'; label: string }> = {
+  todo: { tone: 'neutral', label: 'To do' },
+  in_progress: { tone: 'neutral', label: 'In progress' },
+  review: { tone: 'warning', label: 'Review' },
+  done: { tone: 'success', label: 'Done' },
+};
+
+/** Kartu Kanban (FR-19). Overdue = garis merah + badge + ikon jam merah (FR-20). */
+export function TaskCard({
+  client,
+  title,
+  due,
+  assignee,
+  overdue = false,
+  status = 'in_progress',
+  highlight = false,
+}: TaskCardProps) {
+  const badge = overdue ? { tone: 'danger' as const, label: 'Overdue' } : badges[status];
   return (
-    <article className={`${styles.card} ${overdue ? styles.overdue : ''}`}>
+    <article
+      className={`${styles.card} ${overdue ? styles.overdue : ''} ${highlight ? styles.highlight : ''}`}
+    >
       <div className={styles.row}>
         <span className={styles.client}>{client}</span>
-        <Badge tone={overdue ? 'danger' : 'neutral'}>{overdue ? 'Overdue' : 'In progress'}</Badge>
+        <Badge tone={badge.tone}>{badge.label}</Badge>
       </div>
       <p className={styles.title}>{title}</p>
       <div className={styles.row}>

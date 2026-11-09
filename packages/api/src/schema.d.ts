@@ -2822,6 +2822,204 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/clients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daftar klien untuk filter dan pilihan proyek (W06, W47, W48) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Daftar klien tenant */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Client"][];
+                        };
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daftar proyek beserta progres (W47) */
+        get: {
+            parameters: {
+                query?: {
+                    client_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Daftar proyek */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Project"][];
+                        };
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        put?: never;
+        /** Buat proyek (W48 · Owner, Team Lead) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateProjectRequest"];
+                };
+            };
+            responses: {
+                /** @description Proyek dibuat */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Project"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+                422: components["responses"]["ValidationError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar task untuk Kanban dan tampilan daftar (W06, W46 · FR-19)
+         * @description Karyawan hanya melihat task miliknya; Team Lead divisinya; Owner semua. `overdue` dihitung server.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    project_id?: string;
+                    client_id?: string;
+                    status?: components["schemas"]["TaskStatus"];
+                    assignee_id?: string;
+                    /** @description Nomor halaman, mulai dari 1 */
+                    page?: components["parameters"]["PageQuery"];
+                    /** @description Jumlah item per halaman (maks. 100) */
+                    per_page?: components["parameters"]["PerPageQuery"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Daftar task dan ringkasan */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaskList"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        put?: never;
+        /**
+         * Buat dan tugaskan task (W10, W49, W50 · FR-17, US-06)
+         * @description Task baru selalu berstatus `todo` (US-06 AC-1). Penanggung jawab menerima notifikasi
+         *     `task_assigned` lewat aplikasi dan email. Judul dan penanggung jawab wajib (AC-2) → 422.
+         *     Lampiran: PDF, JPG, PNG, AI, FIG; maks. 20 MB per file.
+         *
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": components["schemas"]["CreateTaskRequest"];
+                };
+            };
+            responses: {
+                /** @description Task dibuat di kolom To Do */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Task"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+                /** @description Lampiran melebihi 20 MB */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                422: components["responses"]["ValidationError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/attendance": {
         parameters: {
             query?: never;
@@ -4158,6 +4356,103 @@ export interface components {
             /** @example 4 */
             unread_count: number;
             meta: components["schemas"]["PaginationMeta"];
+        };
+        Client: {
+            /** @example jbm */
+            id: string;
+            /** @example JBM */
+            name: string;
+            /** @example Jamkrida Bali Mandara */
+            full_name?: string | null;
+            /** @description true untuk proyek internal tenant (label "INTERNAL") */
+            internal?: boolean;
+        };
+        Project: {
+            id: string;
+            /** @example Rebranding JBM */
+            name: string;
+            /**
+             * @description Nama pendek di kolom "Proyek / Klien" (W46)
+             * @example Rebranding
+             */
+            short_name?: string;
+            client: components["schemas"]["Client"];
+            description?: string | null;
+            /** Format: date */
+            start_date?: string | null;
+            /** Format: date */
+            target_date?: string | null;
+            /** @example 4 */
+            active_tasks: number;
+            /**
+             * @description Task selesai ÷ semua task proyek
+             * @example 60
+             */
+            progress_percent: number;
+            members: components["schemas"]["EmployeeRef"][];
+        };
+        CreateProjectRequest: {
+            name: string;
+            client_id: string;
+            /** Format: date */
+            start_date?: string;
+            /**
+             * Format: date
+             * @description Tidak boleh sebelum start_date → 422
+             */
+            target_date?: string;
+            description?: string;
+            member_ids?: string[];
+        };
+        /** @enum {string} */
+        TaskStatus: "todo" | "in_progress" | "review" | "done";
+        /** @enum {string} */
+        TaskPriority: "rendah" | "sedang" | "tinggi";
+        Task: {
+            id: string;
+            title: string;
+            description?: string | null;
+            project?: {
+                id: string;
+                name: string;
+                short_name?: string;
+                client?: components["schemas"]["Client"];
+            } | null;
+            assignee: components["schemas"]["EmployeeRef"];
+            status: components["schemas"]["TaskStatus"];
+            priority: components["schemas"]["TaskPriority"];
+            /** Format: date-time */
+            due_at?: string | null;
+            /** @description due_at sudah lewat dan status belum done (FR-20) */
+            overdue: boolean;
+            attachments?: {
+                id: string;
+                name: string;
+                size_bytes: number;
+                /** Format: uri */
+                url?: string;
+            }[];
+            /** Format: date-time */
+            created_at: string;
+        };
+        TaskList: {
+            data: components["schemas"]["Task"][];
+            summary: {
+                /** @description Task yang belum done */
+                active: number;
+                overdue: number;
+            };
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        CreateTaskRequest: {
+            title: string;
+            project_id?: string;
+            assignee_id: string;
+            /** Format: date-time */
+            due_at?: string;
+            priority?: components["schemas"]["TaskPriority"];
+            description?: string;
+            attachments?: string[];
         };
     };
     responses: {

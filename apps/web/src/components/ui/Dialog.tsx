@@ -10,8 +10,8 @@ type DialogProps = {
   description?: string;
   /** Tombol tutup (×) di kanan judul, seperti W38 dan W39. */
   showClose?: boolean;
-  /** sm 400 px (bawaan), md 520 px (W38), lg 640 px (W39). */
-  size?: 'sm' | 'md' | 'lg';
+  /** sm 400 px (bawaan), md 520 px (W38), xl 560 px (W10, W48), lg 640 px (W39). */
+  size?: 'sm' | 'md' | 'xl' | 'lg';
   onClose: () => void;
   onSubmit: (event: FormEvent) => void;
   actions: ReactNode;

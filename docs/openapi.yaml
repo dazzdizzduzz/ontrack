@@ -53,6 +53,8 @@ tags:
     description: Riwayat bulanan personal, rekapitulasi tenant, dan ekspor PDF
   - name: Persetujuan Izin & Notifikasi (F07)
     description: DRAF - persetujuan izin oleh atasan, sinkron ke kehadiran, dan notifikasi
+  - name: Proyek & Task (F08)
+    description: DRAF - klien, proyek, serta membuat dan menugaskan task (Kanban & daftar)
 
 
 paths:
@@ -1786,6 +1788,153 @@ paths:
           description: Semua ditandai dibaca
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+
+  # ==========================================
+  # PROYEK & TASK (F08)
+  # DRAF usulan frontend (x-draft: true) - perlu dikonfirmasi tim backend.
+  # ==========================================
+  /clients:
+    get:
+      x-draft: true
+      tags:
+        - Proyek & Task (F08)
+      summary: Daftar klien untuk filter dan pilihan proyek (W06, W47, W48)
+      responses:
+        '200':
+          description: Daftar klien tenant
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /projects:
+    get:
+      x-draft: true
+      tags:
+        - Proyek & Task (F08)
+      summary: Daftar proyek beserta progres (W47)
+      parameters:
+        - name: client_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Daftar proyek
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      x-draft: true
+      tags:
+        - Proyek & Task (F08)
+      summary: Buat proyek (W48 · Owner, Team Lead)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Proyek dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /tasks:
+    get:
+      x-draft: true
+      tags:
+        - Proyek & Task (F08)
+      summary: Daftar task untuk Kanban dan tampilan daftar (W06, W46 · FR-19)
+      description: Karyawan hanya melihat task miliknya; Team Lead divisinya; Owner semua. `overdue` dihitung server.
+      parameters:
+        - name: project_id
+          in: query
+          schema:
+            type: string
+        - name: client_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+        - name: assignee_id
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Daftar task dan ringkasan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      x-draft: true
+      tags:
+        - Proyek & Task (F08)
+      summary: Buat dan tugaskan task (W10, W49, W50 · FR-17, US-06)
+      description: |
+        Task baru selalu berstatus `todo` (US-06 AC-1). Penanggung jawab menerima notifikasi
+        `task_assigned` lewat aplikasi dan email. Judul dan penanggung jawab wajib (AC-2) → 422.
+        Lampiran: PDF, JPG, PNG, AI, FIG; maks. 20 MB per file.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task dibuat di kolom To Do
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '413':
+          description: Lampiran melebihi 20 MB
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '422':
+          $ref: '#/components/responses/ValidationError'
 
   # ==========================================
   # RIWAYAT & REKAPITULASI (F05)
@@ -3826,3 +3975,207 @@ components:
           example: 4
         meta:
           $ref: '#/components/schemas/PaginationMeta'
+
+    # ---------- F08 (DRAF, x-draft: true) ----------
+    Client:
+      x-draft: true
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          example: jbm
+        name:
+          type: string
+          example: JBM
+        full_name:
+          type: string
+          nullable: true
+          example: Jamkrida Bali Mandara
+        internal:
+          type: boolean
+          description: true untuk proyek internal tenant (label "INTERNAL")
+
+    Project:
+      x-draft: true
+      type: object
+      required: [id, name, client, active_tasks, progress_percent, members]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: Rebranding JBM
+        short_name:
+          type: string
+          description: Nama pendek di kolom "Proyek / Klien" (W46)
+          example: Rebranding
+        client:
+          $ref: '#/components/schemas/Client'
+        description:
+          type: string
+          nullable: true
+          maxLength: 500
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        target_date:
+          type: string
+          format: date
+          nullable: true
+        active_tasks:
+          type: integer
+          example: 4
+        progress_percent:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Task selesai ÷ semua task proyek
+          example: 60
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployeeRef'
+
+    CreateProjectRequest:
+      x-draft: true
+      type: object
+      required: [name, client_id]
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        client_id:
+          type: string
+        start_date:
+          type: string
+          format: date
+        target_date:
+          type: string
+          format: date
+          description: Tidak boleh sebelum start_date → 422
+        description:
+          type: string
+          maxLength: 500
+        member_ids:
+          type: array
+          items:
+            type: string
+
+    TaskStatus:
+      x-draft: true
+      type: string
+      enum: [todo, in_progress, review, done]
+
+    TaskPriority:
+      x-draft: true
+      type: string
+      enum: [rendah, sedang, tinggi]
+
+    Task:
+      x-draft: true
+      type: object
+      required: [id, title, status, priority, assignee, overdue, created_at]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          nullable: true
+          maxLength: 500
+        project:
+          type: object
+          nullable: true
+          required: [id, name]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            short_name:
+              type: string
+            client:
+              $ref: '#/components/schemas/Client'
+        assignee:
+          $ref: '#/components/schemas/EmployeeRef'
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+        overdue:
+          type: boolean
+          description: due_at sudah lewat dan status belum done (FR-20)
+        attachments:
+          type: array
+          items:
+            type: object
+            required: [id, name, size_bytes]
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              size_bytes:
+                type: integer
+              url:
+                type: string
+                format: uri
+        created_at:
+          type: string
+          format: date-time
+
+    TaskList:
+      x-draft: true
+      type: object
+      required: [data, summary, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        summary:
+          type: object
+          required: [active, overdue]
+          properties:
+            active:
+              type: integer
+              description: Task yang belum done
+            overdue:
+              type: integer
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    CreateTaskRequest:
+      x-draft: true
+      type: object
+      required: [title, assignee_id]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        project_id:
+          type: string
+        assignee_id:
+          type: string
+        due_at:
+          type: string
+          format: date-time
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        description:
+          type: string
+          maxLength: 500
+        attachments:
+          type: array
+          items:
+            type: string
+            format: binary
