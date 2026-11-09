@@ -1,0 +1,9 @@
+# Build output
+/server
+tmp/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
