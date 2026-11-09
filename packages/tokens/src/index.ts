@@ -43,6 +43,15 @@ export const color = {
     dangerBg: '#FEECEB',
     dangerHover: '#912018',
   },
+  /** Stroke 1 px badge status, lebih gelap dari teksnya (Figma: badge/*-border). */
+  badge: {
+    successBorder: '#2F4700',
+    warningBorder: '#6B4500',
+    dangerBorder: '#7A1A13',
+    neutralBorder: '#1F1F1F',
+    // Figma: neutral/900, primitive yang sama dengan bg/inverse. Untuk badge LIVE dashboard F13.
+    liveBorder: '#0A0A0A',
+  },
 } as const;
 
 export const space = {

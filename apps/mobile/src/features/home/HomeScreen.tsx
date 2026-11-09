@@ -56,7 +56,7 @@ const PREVIEW_TIME = '17:44';
 export function HomeScreen({ preview }: { preview?: HomePreview }) {
   const { top } = useSafeAreaInsets();
   const attendance = useAttendance();
-  const { locationGranted, permissionsGranted } = attendance;
+  const { permissionsGranted } = attendance;
   const clockIn = preview ? sampleClockIn : attendance.clockIn;
   const clockOut =
     preview === 'sudah-clock-out'
@@ -108,10 +108,7 @@ export function HomeScreen({ preview }: { preview?: HomePreview }) {
                   ? `Clock-in ${clockIn.time} · ${clockIn.status.status === 'hadir' ? 'Hadir' : 'Terlambat'}`
                   : 'Belum clock-in'}
             </Text>
-            {/* M49 tidak menampilkan status GPS setelah clock-out. */}
-            {!clockOut && (
-              <Badge tone="inverse" label={locationGranted || preview ? 'GPS aktif' : 'Lokasi belum diizinkan'} />
-            )}
+            {/* Badge "GPS aktif" dihapus di Figma: lokasi hanya dibaca saat Clock In/Out. */}
           </View>
           <View style={styles.clock}>
             <Text style={styles.clockTime}>{clock}</Text>

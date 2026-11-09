@@ -129,10 +129,9 @@ export function ClockInCard({ preview }: { preview?: ClockInPreview }) {
         </p>
         {out && record ? (
           clockOutBadge(out, record)
-        ) : record ? (
-          <Badge tone={hadir ? 'success' : 'warning'}>{statusLabel(record)}</Badge>
         ) : (
-          <Badge tone="inverse">Lokasi dari browser</Badge>
+          // KW08: badge disembunyikan selama belum clock-in.
+          record && <Badge tone={hadir ? 'success' : 'warning'}>{statusLabel(record)}</Badge>
         )}
       </div>
       <p className={styles.clock}>{out?.time ?? record?.time ?? clock}</p>
@@ -151,7 +150,7 @@ export function ClockInCard({ preview }: { preview?: ClockInPreview }) {
               ? `Lokasi dari browser · akurasi ±${out.accuracy} m`
               : record
               ? `Lokasi dari browser · akurasi ±${record.accuracy} m · selfie tersimpan`
-              : `${sampleClockIn.office} · radius ${sampleClockIn.radiusMeters} m · kamera laptop untuk selfie`}
+              : `${sampleClockIn.office} · radius ${sampleClockIn.radiusMeters} m`}
           </p>
         </div>
       </div>

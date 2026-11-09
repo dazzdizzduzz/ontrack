@@ -94,6 +94,11 @@ const webcamAlerts: Record<Exclude<WebcamStatus, 'meminta' | 'siap'>, { title: s
   },
 };
 
+/** Lingkaran radius kantor di peta berdiameter 150 px; lingkaran akurasi memakai skala yang sama. */
+const RADIUS_IMAGE_PX = 150;
+const accuracySize = (accuracyMeters: number) =>
+  Math.round((accuracyMeters / sampleClockIn.radiusMeters) * RADIUS_IMAGE_PX);
+
 const badges: Record<GeofenceResult, { tone: 'success' | 'danger' | 'warning'; label: string }> = {
   'dalam-area': { tone: 'success', label: 'Dalam area' },
   'luar-area': { tone: 'danger', label: 'Luar area' },
@@ -132,7 +137,9 @@ export function ClockInDialog(props: ClockInDialogProps) {
     status: webcamStatus,
     retry: retryWebcam,
     capture,
-  } = useWebcam(live && !clockingOut && (result === 'dalam-area' || result === 'gps-lemah'));
+  } = useWebcam(live && !clockingOut && result === 'dalam-area');
+  // KW27: clock-in dengan lokasi kurang akurat tidak membuka kamera.
+  const weakClockIn = result === 'gps-lemah' && !clockingOut;
   const webcamAlert =
     live && webcamStatus !== 'meminta' && webcamStatus !== 'siap'
       ? webcamAlerts[webcamStatus]
@@ -222,6 +229,12 @@ export function ClockInDialog(props: ClockInDialogProps) {
             height={20}
             unoptimized
           />
+          {result === 'gps-lemah' && geofence && (
+            <span
+              className={styles.accuracy}
+              style={{ width: accuracySize(geofence.accuracy), height: accuracySize(geofence.accuracy) }}
+            />
+          )}
           {(result === 'dalam-area' || result === 'luar-area') && (
             <Image
               className={result === 'dalam-area' ? styles.you : styles.youOutside}
@@ -341,8 +354,11 @@ export function ClockInDialog(props: ClockInDialogProps) {
           </>
         )}
 
-        {/* KW27: dengan lokasi kurang akurat, webcam tetap tampil tetapi tombolnya nonaktif. */}
-        {(result === 'dalam-area' || result === 'gps-lemah') && !clockingOut && (
+        {/* KW27: pratinjau kamera baru tampil setelah akurasi ≤ ±50 m. */}
+        {weakClockIn && (
+          <p className={styles.step}>2. Selfie lewat webcam · tersedia setelah lokasi akurat</p>
+        )}
+        {result === 'dalam-area' && !clockingOut && (
           <>
             <p className={styles.step}>2. Selfie lewat webcam</p>
             {live ? (
@@ -421,7 +437,7 @@ export function ClockInDialog(props: ClockInDialogProps) {
             </p>
           </>
         )}
-        {result !== 'dalam-area' && location.state !== 'mencari' && !(result === 'gps-lemah' && !clockingOut) && (
+        {result !== 'dalam-area' && location.state !== 'mencari' && !weakClockIn && (
           <p className={styles.note}>
             Lokasi dibaca dari browser. Jika lokasi kurang tepat, aktifkan Wi-Fi atau gunakan aplikasi
             mobile.
@@ -443,11 +459,18 @@ export function ClockInDialog(props: ClockInDialogProps) {
               {early ? 'Tetap clock out' : 'Clock Out sekarang'}
             </Button>
           )}
-          {(result === 'dalam-area' || result === 'gps-lemah') && !clockingOut && (
+          {weakClockIn && (
+            // KW27: hanya Batal dan Coba lagi. Di pratinjau `?state=` tombol ini tidak berbuat apa-apa.
+            <Button compact onClick={live ? browser.refresh : undefined}>
+              Coba lagi
+              <Image src="/icons/refresh.svg" alt="" width={20} height={20} unoptimized />
+            </Button>
+          )}
+          {result === 'dalam-area' && !clockingOut && (
             <Button
               variant="accent"
               compact
-              disabled={result !== 'dalam-area' || (live && webcamStatus !== 'siap')}
+              disabled={live && webcamStatus !== 'siap'}
               onClick={clockIn}
             >
               Ambil selfie &amp; Clock In
@@ -461,13 +484,13 @@ export function ClockInDialog(props: ClockInDialogProps) {
               <Image src="/icons/arrow-right.svg" alt="" width={20} height={20} unoptimized />
             </Button>
           )}
-          {live && result !== 'dalam-area' && location.state !== 'mencari' && (
+          {live && result !== 'dalam-area' && !weakClockIn && location.state !== 'mencari' && (
             <Button variant="secondary" compact onClick={browser.refresh}>
               Coba lagi
               <Image src="/icons/refresh.svg" alt="" width={20} height={20} unoptimized />
             </Button>
           )}
-          {result !== 'dalam-area' && !(result === 'gps-lemah' && !clockingOut) && (
+          {result !== 'dalam-area' && !weakClockIn && (
             <Button compact disabled>
               {clockingOut ? 'Clock Out' : 'Clock In'}
             </Button>

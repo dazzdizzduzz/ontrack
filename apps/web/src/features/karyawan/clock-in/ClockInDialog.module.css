@@ -74,7 +74,7 @@
   letter-spacing: var(--type-label-s-tracking);
 }
 
-/* Posisi ilustrasi peta mengikuti Figma KW11 (dihitung dari kiri atas). */
+/* Ilustrasi peta Figma KW11, diukur dari tengah agar radius kantor selalu di tengah peta. */
 .map {
   position: relative;
   flex: none;
@@ -105,13 +105,13 @@
 .roadA {
   top: 60px;
   left: -20px;
-  width: 400px;
+  width: calc(100% + 40px);
   height: 14px;
 }
 
 .roadB {
   top: -30px;
-  left: 150px;
+  left: calc(50% - 21px);
   width: 12px;
   height: 240px;
 }
@@ -119,14 +119,14 @@
 .roadC {
   top: 184px;
   left: -45px;
-  width: 420px;
+  width: calc(100% + 90px);
   height: 8px;
   transform: rotate(12deg);
 }
 
 .roadD {
   top: -32px;
-  left: 267px;
+  left: calc(50% + 96px);
   width: 8px;
   height: 240px;
   transform: rotate(-8deg);
@@ -134,22 +134,33 @@
 
 .radius {
   top: 10px;
-  left: 96px;
+  left: calc(50% - 75px);
 }
 
 .office {
   top: 75px;
-  left: 161px;
+  left: calc(50% - 10px);
 }
 
 .you {
   top: 102px;
-  left: 198px;
+  left: calc(50% + 27px);
 }
 
 .youOutside {
   top: 150px;
-  left: 300px;
+  left: calc(50% + 129px);
+}
+
+/* KW27: lingkaran akurasi di tengah peta; ukurannya mengikuti skala radius kantor. */
+.accuracy {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 2px dashed var(--color-status-warning-fg);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-status-warning-fg) 12%, transparent);
+  transform: translate(-50%, -50%);
 }
 
 .status {
@@ -208,12 +219,12 @@
 
 .head {
   top: 43px;
-  left: 123px;
+  left: calc(50% - 48px);
 }
 
 .shoulders {
   top: 167px;
-  left: 66px;
+  left: calc(50% - 105px);
   width: 210px;
   height: 120px;
   border-radius: 100px 100px 0 0;
@@ -222,7 +233,7 @@
 
 .guide {
   top: 23px;
-  left: 105px;
+  left: calc(50% - 66px);
 }
 
 .detected {
@@ -316,7 +327,7 @@
 .footer {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--space-12);
 }
