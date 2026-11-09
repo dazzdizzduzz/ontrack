@@ -4,6 +4,7 @@ import {
   leaveTypeLabels,
   parseDateInput,
   sampleLeaveApprover,
+  sampleLeaveDetails,
   sampleLeaveDraft,
   workingDaysBetween,
   type LeaveRequest,
@@ -63,8 +64,14 @@ export function LeaveSentScreen() {
           },
         ]}
         note="Kamu akan mendapat notifikasi saat atasan menyetujui atau menolak pengajuan ini."
-        // Detail pengajuan dikerjakan di F07; sementara tombol utama membuka daftar.
-        primary={{ label: 'Lihat detail pengajuan', onPress: backToList }}
+        primary={{
+          label: 'Lihat detail pengajuan',
+          onPress: () =>
+            router.replace({
+              pathname: '/izin/[id]',
+              params: { id: lastSubmitted?.id ?? sampleLeaveDetails.menunggu.id },
+            }),
+        }}
         secondary={<Button fullWidth variant="ghost" label="Kembali ke Izin & Cuti" onPress={backToList} />}
       />
     </View>

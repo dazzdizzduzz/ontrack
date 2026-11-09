@@ -48,8 +48,11 @@ export function LeaveListScreen() {
           })}
         </ScrollView>
         {visible.map((request) => (
-          // Detail pengajuan dikerjakan di F07 (status pengajuan).
-          <LeaveCard key={request.id} request={request} />
+          <LeaveCard
+            key={request.id}
+            request={request}
+            onPress={() => router.push({ pathname: '/izin/[id]', params: { id: request.id } })}
+          />
         ))}
         {visible.length === 0 && <Text style={styles.empty}>Belum ada pengajuan dengan status ini.</Text>}
       </ScrollView>
