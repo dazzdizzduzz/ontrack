@@ -18,10 +18,16 @@ const previews: ClockInPreview[] = [
 
 /**
  * KW08. `?state=clock-in` (KW11), `berhasil` (KW12), `ditolak` (KW13), `kurang-akurat` (KW27),
- * `clock-out` (KW14), `clock-out-berhasil` (KW15), dan `pulang-cepat` (KW26).
+ * `clock-out` (KW14), `clock-out-berhasil` (KW15), `pulang-cepat` (KW26), dan `notifikasi` (KW25).
  */
 export default async function BerandaPage({ searchParams }: PageProps) {
   const { state } = await searchParams;
   const preview = previews.find((name) => name === state);
-  return <BerandaKaryawan key={preview} preview={preview} />;
+  return (
+    <BerandaKaryawan
+      key={state}
+      preview={preview}
+      notificationsOpen={state === 'notifikasi'}
+    />
+  );
 }

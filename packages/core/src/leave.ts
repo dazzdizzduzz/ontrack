@@ -217,9 +217,9 @@ export const sampleLowLeaveQuota: LeaveQuota = { ...sampleLeaveQuota, used: 10 }
 export const sampleLeaveApprover = { name: 'I Komang Agus S.', role: 'Team Lead' };
 
 export const sampleLeaveRequests: LeaveRequest[] = [
-  { id: 'sakit-2509', type: 'sakit', start: '2026-09-25', end: '2026-09-25', days: 0.5, reason: 'Kontrol dokter gigi', status: 'disetujui' },
-  { id: 'wfh-1809', type: 'wfh', start: '2026-09-18', end: '2026-09-18', days: 1, reason: 'Alasan: deadline klien di kantor', status: 'ditolak' },
-  { id: 'izin-0209', type: 'izin', start: '2026-09-02', end: '2026-09-02', days: 1, reason: 'Urusan administrasi bank', status: 'disetujui' },
+  { id: 'sakit-2509', type: 'sakit', start: '2026-09-25', end: '2026-09-25', days: 0.5, reason: 'Kontrol dokter gigi', status: 'disetujui', submittedAt: '24/09/2026 · 10:02', decidedAt: '24/09/2026 · 13:30', decidedBy: 'I Komang Agus S.' },
+  { id: 'wfh-1809', type: 'wfh', start: '2026-09-18', end: '2026-09-18', days: 1, reason: 'Alasan: deadline klien di kantor', status: 'ditolak', submittedAt: '17/09/2026 · 19:40', decidedAt: '17/09/2026 · 20:15', decidedBy: 'I Komang Agus S.', decisionNote: 'Presentasi klien harus dari kantor.' },
+  { id: 'izin-0209', type: 'izin', start: '2026-09-02', end: '2026-09-02', days: 1, reason: 'Urusan administrasi bank', status: 'disetujui', submittedAt: '01/09/2026 · 08:20', decidedAt: '01/09/2026 · 09:05', decidedBy: 'I Komang Agus S.' },
 ];
 
 /** Pengajuan cuti contoh M05 → M41 dan KW18 → KW19. */

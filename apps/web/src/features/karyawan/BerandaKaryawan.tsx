@@ -7,6 +7,7 @@ import { TaskCard } from '@/components/ui/TaskCard';
 import { ClockInCard, type ClockInPreview } from './clock-in/ClockInCard';
 import { sampleClockIn, sampleClockOutTime } from './clock-in/data';
 import { TodayHeading } from './clock-in/TodayHeading';
+import { NotificationBell } from './notifikasi/NotificationBell';
 import styles from './BerandaKaryawan.module.css';
 import { sampleBeranda as data, sampleEmployee as employee } from './sampleData';
 
@@ -14,7 +15,14 @@ import { sampleBeranda as data, sampleEmployee as employee } from './sampleData'
  * KW08 · Beranda Karyawan, dengan clock-in web KW11–KW13. Tautan menuju halaman fitur
  * berikutnya, jadi tanpa prefetch.
  */
-export function BerandaKaryawan({ preview }: { preview?: ClockInPreview }) {
+export function BerandaKaryawan({
+  preview,
+  notificationsOpen = false,
+}: {
+  preview?: ClockInPreview;
+  /** KW25: popover notifikasi terbuka sejak awal (`?state=notifikasi`). */
+  notificationsOpen?: boolean;
+}) {
   return (
     <main className={styles.main}>
       <header className={styles.header}>
@@ -26,14 +34,7 @@ export function BerandaKaryawan({ preview }: { preview?: ClockInPreview }) {
               : preview && sampleClockIn.time
           }
         />
-        <Link
-          href="/karyawan/notifikasi"
-          prefetch={false}
-          aria-label="Notifikasi"
-          className={styles.bell}
-        >
-          <Image src="/icons/bell.svg" alt="" width={20} height={20} unoptimized />
-        </Link>
+        <NotificationBell defaultOpen={notificationsOpen} />
       </header>
 
       <div className={styles.rowTop}>
