@@ -1,0 +1,303 @@
+.main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-24);
+  padding: var(--space-32);
+}
+
+/* Form hanya pembungkus semantik; tata letaknya tetap mengikuti .main. */
+.form {
+  display: contents;
+}
+
+.back {
+  align-self: flex-start;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+}
+
+.titleBlock {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.title,
+.subtitle,
+.cardTitle,
+.kvLabel,
+.kvValue {
+  margin: 0;
+}
+
+.title {
+  font: var(--type-heading-h1-font);
+  letter-spacing: var(--type-heading-h1-tracking);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.columns {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-16);
+}
+
+.left {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.right {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--space-16);
+  width: 380px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-20);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.cardTitle {
+  font: var(--type-heading-h3-font);
+  letter-spacing: var(--type-heading-h3-tracking);
+}
+
+.fields {
+  display: flex;
+  margin: 0;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-12) var(--space-16);
+}
+
+.fields > * {
+  width: min(320px, 100%);
+}
+
+/* W16/W27: tiga field rekening selebar 216px berdampingan. */
+.bankFields > * {
+  width: auto;
+  min-width: 160px;
+  flex: 1;
+}
+
+.kv {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding-bottom: var(--space-12);
+}
+
+.kvLabel {
+  color: var(--color-text-secondary);
+  font: var(--type-label-s-font);
+  letter-spacing: var(--type-label-s-tracking);
+}
+
+.kvValue {
+  font: var(--type-body-m-font);
+  letter-spacing: var(--type-body-m-tracking);
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.search {
+  width: min(360px, 100%);
+}
+
+.tableWrap {
+  overflow: hidden;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+/* W15: pagination di bawah tabel, tidak ikut tergeser horizontal. */
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-20);
+  border-top: 1px solid var(--color-border-default);
+}
+
+.paginationText {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.paginationNav {
+  display: flex;
+  gap: var(--space-8);
+}
+
+/* Karyawan nonaktif di W15: nama dan email abu-abu. */
+.personInactive,
+.personInactive .personEmail {
+  color: var(--color-text-secondary);
+}
+
+.table {
+  width: 100%;
+  min-width: 1118px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.table thead th {
+  height: 45px;
+  border-bottom: 1px solid var(--color-border-default);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
+  font: var(--type-label-s-font);
+  letter-spacing: var(--type-label-s-tracking);
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.table tbody tr:not(:last-child) {
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.table td {
+  height: 69px;
+}
+
+.table th:first-child,
+.table td:first-child {
+  width: 320px;
+  padding-left: var(--space-20);
+}
+
+.colPosition {
+  width: 200px;
+}
+
+.colMeta {
+  width: 120px;
+}
+
+.table .colActions {
+  padding-right: var(--space-20);
+  text-align: right;
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.personText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.personName {
+  color: inherit;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+  text-decoration: none;
+}
+
+.personName:hover {
+  text-decoration: underline;
+}
+
+.personEmail {
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.actions {
+  display: inline-flex;
+  gap: var(--space-4);
+}
+
+.empty {
+  padding: var(--space-24);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+@media (max-width: 1023px) {
+  .main {
+    gap: var(--space-20);
+    padding: var(--space-24);
+  }
+
+  .columns {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .right {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .main {
+    gap: var(--space-16);
+    padding: var(--space-20) var(--space-16);
+  }
+
+  .header {
+    flex-wrap: wrap;
+  }
+
+  .titleBlock {
+    flex: 1 0 100%;
+  }
+}

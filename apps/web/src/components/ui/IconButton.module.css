@@ -1,0 +1,17 @@
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-target);
+  height: var(--size-icon-target);
+  border-radius: var(--radius-full);
+}
+
+.iconButton:hover {
+  background: var(--color-bg-hover);
+}
+
+.iconButton:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: -2px;
+}

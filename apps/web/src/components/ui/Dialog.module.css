@@ -1,0 +1,83 @@
+.dialog {
+  width: min(400px, calc(100vw - 2 * var(--space-16)));
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-dialog);
+  color: var(--color-text-primary);
+}
+
+.md {
+  width: min(520px, calc(100vw - 2 * var(--space-16)));
+}
+
+.lg {
+  width: min(640px, calc(100vw - 2 * var(--space-16)));
+}
+
+.dialog::backdrop {
+  background: var(--color-bg-scrim);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-24);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.close {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-target);
+  height: var(--size-icon-target);
+  margin: calc(-1 * var(--space-12)) calc(-1 * var(--space-12)) calc(-1 * var(--space-12)) 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--color-bg-hover);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: -2px;
+}
+
+.title,
+.description {
+  margin: 0;
+}
+
+.title {
+  font: var(--type-heading-h2-font);
+  letter-spacing: var(--type-heading-h2-tracking);
+}
+
+.description {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+/* W91: tombol Batal (M) dan aksi utama (L) sejajar di atas, tidak saling meregang. */
+.actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: var(--space-8);
+}

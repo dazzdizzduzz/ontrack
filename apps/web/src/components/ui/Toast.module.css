@@ -1,0 +1,19 @@
+.toast {
+  position: fixed;
+  z-index: 10;
+  right: var(--space-24);
+  bottom: var(--space-24);
+  width: 380px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-toast);
+}
+
+/* W80: selebar layar dikurangi 16px di kiri dan kanan. */
+@media (max-width: 767px) {
+  .toast {
+    right: var(--space-16);
+    bottom: var(--space-16);
+    left: var(--space-16);
+    width: auto;
+  }
+}

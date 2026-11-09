@@ -1,0 +1,11 @@
+.layout {
+  display: flex;
+  min-height: 100dvh;
+  background: var(--color-bg-canvas);
+}
+
+@media (max-width: 1023px) {
+  .layout {
+    flex-direction: column;
+  }
+}

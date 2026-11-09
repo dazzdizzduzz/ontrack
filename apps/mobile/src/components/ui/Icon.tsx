@@ -1,0 +1,75 @@
+import { Image } from 'expo-image';
+
+const icons = {
+  alert: require('@/assets/icons/alert.svg'),
+  'alert-danger': require('@/assets/icons/alert-danger.svg'),
+  'alert-warning': require('@/assets/icons/alert-warning.svg'),
+  'arrow-right': require('@/assets/icons/arrow-right.svg'),
+  'arrow-right-inverse': require('@/assets/icons/arrow-right-inverse.svg'),
+  back: require('@/assets/icons/back.svg'),
+  bell: require('@/assets/icons/bell.svg'),
+  camera: require('@/assets/icons/camera.svg'),
+  check: require('@/assets/icons/check.svg'),
+  'check-alert': require('@/assets/icons/check-alert.svg'),
+  'check-badge': require('@/assets/icons/check-badge.svg'),
+  'check-inverse': require('@/assets/icons/check-inverse.svg'),
+  'check-large': require('@/assets/icons/check-large.svg'),
+  'check-list': require('@/assets/icons/check-list.svg'),
+  clock: require('@/assets/icons/clock.svg'),
+  'clock-large': require('@/assets/icons/clock-large.svg'),
+  'calendar-16': require('@/assets/icons/calendar-16.svg'),
+  'check-24': require('@/assets/icons/check-24.svg'),
+  'close-20': require('@/assets/icons/close-20.svg'),
+  flag: require('@/assets/icons/flag.svg'),
+  paperclip: require('@/assets/icons/paperclip.svg'),
+  'paperclip-20': require('@/assets/icons/paperclip-20.svg'),
+  'plus-inverse': require('@/assets/icons/plus-inverse.svg'),
+  upload: require('@/assets/icons/upload.svg'),
+  calendar: require('@/assets/icons/calendar.svg'),
+  'chevron-right': require('@/assets/icons/chevron-right.svg'),
+  history: require('@/assets/icons/history.svg'),
+  'logout-danger': require('@/assets/icons/logout-danger.svg'),
+  'key-menu': require('@/assets/icons/key-menu.svg'),
+  'shield-menu': require('@/assets/icons/shield-menu.svg'),
+  wallet: require('@/assets/icons/wallet.svg'),
+  'chevron-down': require('@/assets/icons/chevron-down.svg'),
+  close: require('@/assets/icons/close.svg'),
+  'dot-accent': require('@/assets/icons/dot-accent.svg'),
+  'dot-danger': require('@/assets/icons/dot-danger.svg'),
+  'dot-neutral': require('@/assets/icons/dot-neutral.svg'),
+  'dot-success': require('@/assets/icons/dot-success.svg'),
+  'dot-warning': require('@/assets/icons/dot-warning.svg'),
+  eye: require('@/assets/icons/eye.svg'),
+  'eye-off': require('@/assets/icons/eye-off.svg'),
+  info: require('@/assets/icons/info.svg'),
+  key: require('@/assets/icons/key.svg'),
+  'logo-mark': require('@/assets/icons/logo-mark.svg'),
+  mail: require('@/assets/icons/mail.svg'),
+  'map-office': require('@/assets/icons/map-office.svg'),
+  'map-pin-office': require('@/assets/icons/map-pin-office.svg'),
+  'map-you': require('@/assets/icons/map-you.svg'),
+  'map-you-outside': require('@/assets/icons/map-you-outside.svg'),
+  pin: require('@/assets/icons/pin.svg'),
+  'pin-accent': require('@/assets/icons/pin-accent.svg'),
+  'pin-lime': require('@/assets/icons/pin-lime.svg'),
+  refresh: require('@/assets/icons/refresh.svg'),
+  shield: require('@/assets/icons/shield.svg'),
+  'tab-calendar': require('@/assets/icons/tab-calendar.svg'),
+  'tab-home': require('@/assets/icons/tab-home.svg'),
+  'tab-task': require('@/assets/icons/tab-task.svg'),
+  'tab-user': require('@/assets/icons/tab-user.svg'),
+} as const;
+
+export type IconName = keyof typeof icons;
+
+/** Ikon dekoratif dari Figma; beri label aksesibilitas pada elemen induknya. */
+export function Icon({ name, size }: { name: IconName; size: number }) {
+  return (
+    <Image
+      source={icons[name]}
+      style={{ width: size, height: size }}
+      contentFit="contain"
+      accessible={false}
+    />
+  );
+}

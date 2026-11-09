@@ -1,0 +1,18 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  font: var(--type-body-m-font);
+  letter-spacing: var(--type-body-m-tracking);
+  -webkit-font-smoothing: antialiased;
+}

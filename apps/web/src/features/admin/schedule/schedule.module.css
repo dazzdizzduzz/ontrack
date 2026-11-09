@@ -1,0 +1,254 @@
+.columns {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-16);
+}
+
+.scheduleCard {
+  min-width: 0;
+  flex: 1;
+}
+
+.locationCard {
+  flex: none;
+  width: 440px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.cardHeader > button {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* W89 */
+.locationChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.fieldRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-12);
+}
+
+.fieldRow > * {
+  width: auto;
+  min-width: 130px;
+  flex: 1;
+}
+
+.groupLabel {
+  margin: 0;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.radius {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.radiusLabel {
+  display: flex;
+  justify-content: space-between;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.radiusValue {
+  color: var(--color-text-accent);
+}
+
+.radiusScale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.slider {
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to right,
+    var(--color-bg-inverse) var(--slider-fill),
+    var(--color-bg-disabled) var(--slider-fill)
+  );
+}
+
+.slider::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-bg-disabled);
+}
+
+.slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-bg-inverse);
+}
+
+.slider::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  margin-top: -7px;
+  border: 0;
+  background: url('/icons/slider-thumb.svg') center / contain no-repeat;
+  appearance: none;
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  background: url('/icons/slider-thumb.svg') center / contain no-repeat;
+}
+
+.slider:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.members {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tampilan karyawan (KW10) */
+.readOnlyColumns {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-24);
+}
+
+.readOnlyCard {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-24);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.hours,
+.secondaryText,
+.locationName {
+  margin: 0;
+}
+
+.hours {
+  font: var(--type-heading-h1-font);
+  letter-spacing: var(--type-heading-h1-tracking);
+}
+
+.secondaryText {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.locationName {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.dayDots {
+  display: flex;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dayDot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-disabled);
+  font: var(--type-label-s-font);
+  letter-spacing: var(--type-label-s-tracking);
+}
+
+.dayDotOn {
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+}
+
+.keyValue {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-16);
+  margin: 0;
+}
+
+.keyValue dt {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.keyValue dd {
+  margin: 0;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+  text-align: right;
+}
+
+.keyValues {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  margin: 0;
+}
+
+@media (max-width: 1023px) {
+  .columns,
+  .readOnlyColumns {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .locationCard {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .readOnlyCard {
+    padding: var(--space-16);
+  }
+}

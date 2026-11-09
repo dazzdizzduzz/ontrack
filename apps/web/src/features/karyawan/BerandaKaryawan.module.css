@@ -1,0 +1,231 @@
+.main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-24);
+  padding: var(--space-32);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+}
+
+.titleBlock {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title,
+.subtitle,
+.clockStatus,
+.clock,
+.geofenceTitle,
+.geofenceDetail,
+.panelTitle,
+.rowTitle,
+.rowDetail {
+  margin: 0;
+}
+
+.title {
+  font: var(--type-heading-h1-font);
+  letter-spacing: var(--type-heading-h1-tracking);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.bell {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-target);
+  height: var(--size-icon-target);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-surface);
+}
+
+.bell:hover {
+  background: var(--color-bg-hover);
+}
+
+.bell:focus-visible,
+.panelLink:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+.rowTop,
+.rowBottom {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-16);
+}
+
+.rowBottom {
+  flex: 1;
+}
+
+.clockCard {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-24);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+}
+
+.clockTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.clockStatus {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.clock {
+  font: var(--type-numeric-clock-font);
+  letter-spacing: var(--type-numeric-clock-tracking);
+}
+
+.geofence {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-12);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-inverse-overlay);
+}
+
+.geofenceText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.geofenceTitle {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.geofenceDetail {
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.summary {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--space-16);
+  width: 360px;
+}
+
+.panel {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-20);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.panelTitle {
+  font: var(--type-heading-h3-font);
+  letter-spacing: var(--type-heading-h3-tracking);
+}
+
+.panelLink {
+  color: var(--color-text-accent);
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+  text-decoration: none;
+}
+
+.panelLink:hover {
+  text-decoration: underline;
+}
+
+.leave,
+.slip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  border-radius: var(--radius-md);
+}
+
+.leave {
+  border: 1px solid var(--color-border-default);
+}
+
+.slip {
+  background: var(--color-bg-subtle);
+}
+
+.rowText {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.rowTitle {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.rowDetail {
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+@media (max-width: 1023px) {
+  .main {
+    padding: var(--space-16);
+  }
+
+  .rowTop,
+  .rowBottom {
+    flex-direction: column;
+  }
+
+  .summary {
+    width: 100%;
+  }
+
+  .clockTop {
+    flex-wrap: wrap;
+  }
+}

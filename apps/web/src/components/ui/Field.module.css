@@ -1,0 +1,133 @@
+.field {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.label {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 48px;
+  padding: var(--space-12) var(--space-16);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+}
+
+.control:has(input:focus-visible),
+.control:has(select:focus-visible),
+.control:has(textarea:focus-visible) {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 1px;
+}
+
+.controlError {
+  border: 2px solid var(--color-status-danger-fg);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: var(--type-body-m-font);
+  letter-spacing: var(--type-body-m-tracking);
+}
+
+/* Area sentuh 44px tanpa mengubah tinggi field yang mengikuti ikon 20px. */
+.toggle {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-target);
+  height: var(--size-icon-target);
+  margin: -12px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+
+.toggle:hover {
+  background: var(--color-bg-hover);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: -4px;
+}
+
+.message {
+  min-height: calc(12px * 1.4);
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.messageError {
+  color: var(--color-status-danger-fg);
+}
+
+.messageRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+/* Select asli menutupi seluruh kontrol agar seluruh area bisa diklik. */
+.selectControl {
+  position: relative;
+  padding: 0;
+}
+
+.select {
+  width: 100%;
+  min-height: 46px;
+  padding: var(--space-12) calc(var(--space-16) + 28px) var(--space-12) var(--space-16);
+  border: 0;
+  border-radius: inherit;
+  outline: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: var(--type-body-m-font);
+  letter-spacing: var(--type-body-m-tracking);
+  appearance: none;
+  cursor: pointer;
+}
+
+.chevron {
+  position: absolute;
+  right: var(--space-16);
+  pointer-events: none;
+}
+
+.textareaControl {
+  align-items: stretch;
+  height: 112px;
+}
+
+.textarea {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: var(--type-body-m-font);
+  letter-spacing: var(--type-body-m-tracking);
+  resize: none;
+}

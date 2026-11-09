@@ -1,0 +1,47 @@
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding-block: var(--space-12);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+  cursor: pointer;
+}
+
+/* Area klik 44x44px walau hanya kotak 20px yang terlihat. */
+.iconOnly {
+  position: relative;
+  padding-inline: var(--space-12);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.control {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 1.5px solid var(--color-border-control);
+  border-radius: 6px;
+  background: var(--color-bg-surface) center / 16px 16px no-repeat;
+  appearance: none;
+  cursor: pointer;
+}
+
+.control:checked {
+  border-color: var(--color-bg-inverse);
+  background-color: var(--color-bg-inverse);
+  background-image: url('/icons/check-inverse.svg');
+}
+
+.control:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}

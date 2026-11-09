@@ -1,0 +1,12 @@
+{
+  "name": "on-track",
+  "private": true,
+  "packageManager": "pnpm@12.18.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @on-track/web dev",
+    "dev:mobile": "pnpm --filter @on-track/mobile start",
+    "dev:mobile:web": "pnpm --filter @on-track/mobile web",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint"
+  }
+}

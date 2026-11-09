@@ -1,0 +1,298 @@
+.main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-24);
+  padding: var(--space-32);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title,
+.subtitle,
+.cardTitle,
+.footnote {
+  margin: 0;
+}
+
+.title {
+  font: var(--type-heading-h1-font);
+  letter-spacing: var(--type-heading-h1-tracking);
+}
+
+.subtitle,
+.footnote {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.footnote {
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+/* KW16: kalender 400 px di kiri, tabel harian mengisi sisanya. */
+.columns {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-24);
+}
+
+.card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-20);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.card:first-child {
+  flex: none;
+  width: 400px;
+}
+
+.card:last-child {
+  flex: 1;
+}
+
+.cardTitle {
+  font: var(--type-heading-h3-font);
+  letter-spacing: var(--type-heading-h3-tracking);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-8);
+  margin: 0;
+}
+
+/* Angka di atas label, seperti Figma; urutan DOM tetap label lalu angka untuk pembaca layar. */
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-12);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+}
+
+.statValue {
+  margin: 0;
+  font: var(--type-heading-h2-font);
+  letter-spacing: var(--type-heading-h2-tracking);
+}
+
+.statLabel {
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-12);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+}
+
+.calendarGrid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: var(--space-8);
+  table-layout: fixed;
+}
+
+.calendarGrid th {
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+  text-align: center;
+}
+
+.calendarGrid td {
+  padding: 0;
+}
+
+.day {
+  display: flex;
+  height: 52px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  border-radius: var(--radius-md);
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.dayOff {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-disabled);
+}
+
+.dot,
+.legendDot {
+  display: inline-block;
+  border-radius: var(--radius-full);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+}
+
+/* Warna status selalu disertai label teks (WCAG 1.4.1). */
+.hadir {
+  background: var(--color-accent-default);
+}
+
+.terlambat {
+  background: var(--color-status-warning-fg);
+}
+
+.izin {
+  background: var(--color-text-disabled);
+}
+
+.alpha {
+  background: var(--color-status-danger-fg);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+  margin: 0;
+  padding: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+  list-style: none;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.table th {
+  padding-bottom: var(--space-12);
+  border-bottom: 1px solid var(--color-border-default);
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.table td {
+  height: 54px;
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.empty {
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+@media (max-width: 1023px) {
+  .main {
+    gap: var(--space-20);
+    padding: var(--space-24);
+  }
+
+  .columns {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .card:first-child {
+    width: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .main {
+    gap: var(--space-16);
+    padding: var(--space-20) var(--space-16);
+  }
+}
+
+/* KW28, W96: periode tanpa catatan absensi. */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-64) var(--space-24);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  text-align: center;
+}
+
+.emptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-8);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-subtle);
+}
+
+.emptyTitle,
+.emptyBody {
+  margin: 0;
+}
+
+.emptyTitle {
+  color: var(--color-text-primary);
+  font: var(--type-heading-h3-font);
+  letter-spacing: var(--type-heading-h3-tracking);
+}
+
+.emptyBody {
+  max-width: 260px;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+/* KW28: periode di atas, kartu kosong selebar halaman. */
+.periodOnly {
+  width: min(320px, 100%);
+}

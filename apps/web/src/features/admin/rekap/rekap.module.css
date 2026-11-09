@@ -1,0 +1,188 @@
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+}
+
+/* W05: tiga pilihan selebar 220 px berdampingan. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+}
+
+.filters > *,
+.periodField {
+  width: min(220px, 100%);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-16);
+}
+
+.table th:first-child,
+.table td:first-child {
+  width: 280px;
+}
+
+.colDivision {
+  width: 140px;
+}
+
+.colNumber {
+  width: 100px;
+}
+
+.colShort {
+  width: 80px;
+}
+
+.colHours {
+  width: 120px;
+}
+
+.strong {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+/* W38 */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.optionsLegend {
+  margin-bottom: var(--space-8);
+  padding: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.dialogNote {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+/* W39 */
+.file {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+}
+
+.fileText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fileName,
+.fileMeta,
+.pageBrand,
+.pageTitle,
+.pageMeta,
+.pageFoot {
+  margin: 0;
+}
+
+.fileName {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.fileMeta,
+.pageMeta,
+.pageFoot {
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.preview {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-20);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-canvas);
+}
+
+/* Sketsa halaman A4 (rasio 1 : 1,41). */
+.page {
+  display: flex;
+  width: min(300px, 100%);
+  aspect-ratio: 1 / 1.41;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-24);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-menu);
+}
+
+.pageBrand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.pageDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-default);
+}
+
+.pageTitle {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.pageTable {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+}
+
+.pageHead,
+.pageRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: var(--space-8);
+}
+
+.pageHead span,
+.pageRow span {
+  height: 6px;
+  border-radius: var(--radius-full);
+}
+
+.pageHead span {
+  background: var(--color-text-disabled);
+}
+
+.pageRow span {
+  background: var(--color-border-default);
+}
+
+@media (max-width: 1023px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

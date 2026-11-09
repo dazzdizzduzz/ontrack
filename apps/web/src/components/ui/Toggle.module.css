@@ -1,0 +1,29 @@
+.toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-12);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+  cursor: pointer;
+}
+
+/* Input asli tetap bisa difokus dan dibaca screen reader. */
+.input {
+  position: absolute;
+  width: 44px;
+  height: 24px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.track {
+  flex: none;
+  border-radius: var(--radius-full);
+}
+
+.input:focus-visible + .track {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}

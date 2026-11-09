@@ -1,0 +1,164 @@
+.main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-24);
+  padding: var(--space-32);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+}
+
+.titleBlock {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title,
+.subtitle {
+  margin: 0;
+}
+
+.title {
+  font: var(--type-heading-h1-font);
+  letter-spacing: var(--type-heading-h1-tracking);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.table {
+  width: 100%;
+  min-width: 1098px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.table th,
+.table td {
+  padding: 0;
+  font-weight: inherit;
+}
+
+.table tbody tr:not(:last-child) {
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.featureHead,
+.roleHead {
+  height: 45px;
+  border-bottom: 1px solid var(--color-border-default);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
+  font: var(--type-label-s-font) !important;
+  letter-spacing: var(--type-label-s-tracking);
+  text-transform: uppercase;
+}
+
+.table .featureHead,
+.table .feature {
+  width: 380px;
+  padding-left: var(--space-20);
+  text-align: left;
+}
+
+.roleHead {
+  width: 140px;
+  text-align: center;
+}
+
+.table .feature {
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.cell {
+  height: 61px;
+  text-align: center;
+}
+
+/* Kolom terakhir mengambil sisa lebar tanpa menggeser posisi tengahnya, sesuai Figma. */
+.table .roleHead:last-child,
+.table .cell:last-child {
+  width: auto;
+  padding-right: var(--space-32);
+}
+
+/* W77: tabel dipadatkan agar muat tanpa digeser. */
+@media (max-width: 1023px) {
+  .main {
+    gap: var(--space-20);
+    padding: var(--space-24);
+  }
+
+  .table {
+    min-width: 0;
+  }
+
+  .table .featureHead,
+  .table .feature {
+    width: auto;
+  }
+
+  .table .roleHead {
+    width: 92px;
+  }
+
+  .table .roleHead:last-child,
+  .table .cell:last-child {
+    width: 110px;
+    padding-right: 18px;
+  }
+}
+
+/* W78: judul dan chip mengikuti lebar layar, tabel digeser ke samping. */
+@media (max-width: 767px) {
+  .main {
+    gap: var(--space-16);
+    padding: var(--space-20) var(--space-16);
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-12);
+  }
+
+  .titleBlock {
+    flex: none;
+    width: 100%;
+  }
+
+  .table {
+    min-width: 654px;
+  }
+
+  .table .featureHead,
+  .table .feature {
+    padding-right: var(--space-12);
+    padding-left: var(--space-12);
+  }
+
+  .table .roleHead:last-child,
+  .table .cell:last-child {
+    width: 104px;
+    padding-right: var(--space-12);
+  }
+}

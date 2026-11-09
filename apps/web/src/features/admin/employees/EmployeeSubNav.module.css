@@ -1,0 +1,13 @@
+.subNav {
+  display: flex;
+  gap: var(--space-8);
+  overflow-x: auto;
+}
+
+/* W78: chip turun ke baris berikutnya di ponsel. */
+@media (max-width: 767px) {
+  .subNav {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
