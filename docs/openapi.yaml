@@ -1,0 +1,3422 @@
+openapi: 3.0.3
+info:
+  title: On-Track API - Fase 1 (Manajemen SDM & Struktur Organisasi)
+  description: |
+    Spesifikasi API Fase 1 untuk On-Track: Autentikasi, Struktur Organisasi (Departments & Positions),
+    serta Manajemen Karyawan / Users (FR-03).
+    
+    Fitur utama:
+    - Multi-tenancy berbasis klaim JWT (`tid`). Seluruh operasi data difilter per tenant.
+    - Pembatasan field sensitif (gaji pokok & rekening bank) hanya dapat diakses oleh peran `owner` dan `hrd`.
+    - Format error standar RFC 7807 `application/problem+json`.
+    - Pagination terstandarisasi dengan objek `meta`.
+  version: 1.0.0
+  contact:
+    name: Tim Pengembang On-Track
+    email: dev@ontrack.test
+
+servers:
+  - url: http://localhost:4010
+    description: Mock Prism (npx @stoplight/prism-cli mock docs/openapi.yaml -p 4010); Prism tidak memakai awalan /v1
+  - url: http://localhost:3000/v1
+    description: Server Lokal Next.js (Port default / v1 rewrite)
+  - url: http://localhost:8080/v1
+    description: Server Backend Standalone Lokal
+  - url: http://localhost:3000/api/v1
+    description: Server Lokal Next.js API direct path
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Auth
+    description: Otentikasi dan pengelolaan sesi (F01)
+  - name: Peran & Hak Akses (F01)
+    description: Matriks peran × fitur per tenant (W18)
+  - name: Struktur Organisasi - Departments
+    description: Pengelolaan divisi / departemen dalam tenant
+  - name: Struktur Organisasi - Positions
+    description: Pengelolaan jabatan / posisi pekerjaan dalam tenant
+  - name: Karyawan (Users - FR-03)
+    description: Pengelolaan akun karyawan, profil, aktivasi, dan status kerja
+  - name: Data Master - Jadwal (F02)
+    description: Pengelolaan jam kerja, toleransi keterlambatan, dan ambang lembur
+  - name: Data Master - Lokasi Kantor (F02)
+    description: Pengelolaan titik koordinat kantor dan batas radius geofence
+  - name: Absensi Harian (F03, F04)
+    description: Status hari ini, clock-in validasi GPS dan selfie, serta clock-out
+  - name: Lembur & Persetujuan (F04)
+    description: Daftar pengajuan lembur, persetujuan, dan penolakan
+  - name: Izin dan Cuti (F06)
+    description: Kuota tahunan, pengajuan cuti/izin/sakit, dan surat dokter
+  - name: Riwayat & Rekapitulasi (F05)
+    description: Riwayat bulanan personal, rekapitulasi tenant, dan ekspor PDF
+
+
+paths:
+  # ==========================================
+  # AUTHENTICATION
+  # ==========================================
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Masuk ke sistem (Login)
+      description: |
+        Memvalidasi email dan kata sandi. Mengembalikan JWT access token (15 menit)
+        dan refresh token (rotasi). Memiliki proteksi lockout setelah 5x gagal.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Berhasil masuk
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Kredensial tidak valid
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '422':
+          description: Format email atau kata sandi tidak memenuhi kriteria
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '423':
+          description: Akun terkunci karena percobaan gagal berulang
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh Access Token
+      description: Menukar refresh token yang valid dengan pasangan access token baru dan refresh token baru (rotasi).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Token baru berhasil diterbitkan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          description: Refresh token tidak valid atau sudah kedaluwarsa
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Keluar dari sistem (Logout)
+      description: Mencabut refresh token sesi saat ini.
+      responses:
+        '200':
+          description: Berhasil keluar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /me:
+    get:
+      tags:
+        - Auth
+      summary: Dapatkan profil pengguna saat ini
+      description: Mengambil data pengguna login dari klaim token JWT aktif.
+      responses:
+        '200':
+          description: Profil pengguna aktif
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/password/forgot:
+    post:
+      tags:
+        - Auth
+      summary: Kirim email tautan reset kata sandi (W19, KW03, M10)
+      description: |
+        Balasan selalu 202 dengan isi sama, terdaftar atau tidak, agar tidak membocorkan akun.
+        Tautan berlaku 30 menit dan sekali pakai. Kirim ulang paling cepat 45 detik sekali → 429 + `Retry-After`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '202':
+          description: Permintaan diterima; email dikirim bila akun ada
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
+
+  /auth/password/reset:
+    post:
+      tags:
+        - Auth
+      summary: Buat kata sandi baru dari tautan email (W21, KW05, M11)
+      description: |
+        Kata sandi minimal 8 karakter, berisi huruf dan angka, minimal satu huruf besar.
+        Token kedaluwarsa atau sudah dipakai → 410 `RESET_TOKEN_EXPIRED`. Semua refresh token user dicabut.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '204':
+          description: Kata sandi berhasil diubah (W22, KW06, M25)
+        '410':
+          description: Tautan reset kedaluwarsa atau sudah dipakai
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /roles/permissions:
+    get:
+      tags:
+        - Peran & Hak Akses (F01)
+      summary: Matriks peran × fitur tenant (W18)
+      description: 5 peran per tenant; `super_admin` di level platform dan tidak muncul di matriks.
+      responses:
+        '200':
+          description: Matriks hak akses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolePermissions'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+    put:
+      tags:
+        - Peran & Hak Akses (F01)
+      summary: Simpan matriks hak akses (W18, W73, W74)
+      description: |
+        Mengganti seluruh matriks dan mencatatnya di audit log (nilai sebelum dan sesudah).
+        Owner tidak boleh mencabut `employees.manage` miliknya → 422 `OWNER_LOCKOUT`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RolePermissions'
+      responses:
+        '200':
+          description: Matriks tersimpan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolePermissions'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ==========================================
+  # STRUKTUR ORGANISASI: DEPARTMENTS
+  # ==========================================
+  /departments:
+    get:
+      tags:
+        - Struktur Organisasi - Departments
+      summary: Daftar Departemen / Divisi
+      description: Mengambil daftar departemen untuk tenant dari pengguna aktif.
+      parameters:
+        - name: search
+          in: query
+          description: Filter pencarian nama departemen
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Nomor halaman
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          description: Jumlah item per halaman (maks. 100)
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Daftar departemen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Department'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Struktur Organisasi - Departments
+      summary: Buat Departemen Baru
+      description: Menambahkan departemen baru ke tenant. Hanya dapat diakses oleh Admin (Owner / HRD).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDepartmentRequest'
+      responses:
+        '201':
+          description: Departemen berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          description: Departemen dengan nama tersebut sudah ada di tenant
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /departments/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID Departemen (UUID)
+        schema:
+          type: string
+    get:
+      tags:
+        - Struktur Organisasi - Departments
+      summary: Detail Departemen
+      description: Mengambil informasi detail sebuah departemen dalam tenant.
+      responses:
+        '200':
+          description: Detail departemen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      tags:
+        - Struktur Organisasi - Departments
+      summary: Perbarui Departemen
+      description: Memperbarui data departemen.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDepartmentRequest'
+      responses:
+        '200':
+          description: Departemen berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      tags:
+        - Struktur Organisasi - Departments
+      summary: Hapus Departemen
+      description: Menghapus departemen jika belum ada karyawan atau jabatan yang terhubung.
+      responses:
+        '200':
+          description: Departemen berhasil dihapus
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          description: Departemen tidak dapat dihapus karena masih digunakan
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  # ==========================================
+  # STRUKTUR ORGANISASI: POSITIONS
+  # ==========================================
+  /positions:
+    get:
+      tags:
+        - Struktur Organisasi - Positions
+      summary: Daftar Jabatan / Posisi
+      description: Mengambil daftar jabatan dalam tenant.
+      parameters:
+        - name: department_id
+          in: query
+          description: Filter berdasarkan departemen
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Filter pencarian nama jabatan
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Daftar jabatan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Position'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Struktur Organisasi - Positions
+      summary: Buat Jabatan Baru
+      description: Menambahkan posisi/jabatan baru ke tenant.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePositionRequest'
+      responses:
+        '201':
+          description: Jabatan berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Position'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /positions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Struktur Organisasi - Positions
+      summary: Detail Jabatan
+      responses:
+        '200':
+          description: Detail jabatan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Position'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      tags:
+        - Struktur Organisasi - Positions
+      summary: Perbarui Jabatan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePositionRequest'
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Position'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      tags:
+        - Struktur Organisasi - Positions
+      summary: Hapus Jabatan
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ==========================================
+  # KARYAWAN / USERS (FR-03)
+  # ==========================================
+  /users:
+    get:
+      tags:
+        - Karyawan (Users - FR-03)
+      summary: Daftar Karyawan / Users
+      description: |
+        Mengambil daftar karyawan dalam tenant.
+        Mendukung filter berdasarkan status (`aktif`, `nonaktif`, `diundang`), divisi/departemen,
+        peran, serta pencarian nama atau email.
+        
+        **Catatan Hak Akses:** Field gaji pokok (`base_salary`) dan data rekening bank
+        hanya disertakan apabila pemanggil memiliki peran `owner` atau `hrd`.
+      parameters:
+        - name: status
+          in: query
+          description: Filter status karyawan
+          schema:
+            type: string
+            enum: [aktif, nonaktif, diundang]
+        - name: department_id
+          in: query
+          description: Filter berdasarkan ID Departemen
+          schema:
+            type: string
+        - name: role
+          in: query
+          description: Filter berdasarkan peran
+          schema:
+            type: string
+            enum: [owner, hrd, team_lead, employee, cashier]
+        - name: search
+          in: query
+          description: Pencarian nama atau email
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Daftar data karyawan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserResponse'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Karyawan (Users - FR-03)
+      summary: Tambah Karyawan Baru (Admin)
+      description: |
+        Menambahkan data karyawan baru ke dalam tenant.
+        Jika `status` tidak ditentukan, default adalah `diundang`.
+        Email harus unik dalam lingkup tenant tersebut.
+        Hanya Admin (`owner` atau `hrd`) yang berhak memanggil endpoint ini.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: Karyawan berhasil ditambahkan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          description: Email sudah terdaftar pada tenant ini
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID Karyawan (UUID / String ID)
+        schema:
+          type: string
+    get:
+      tags:
+        - Karyawan (Users - FR-03)
+      summary: Detail Data Karyawan
+      description: |
+        Mengambil rincian data karyawan dalam tenant.
+        Field sensitif (gaji & rekening bank) hanya terlihat untuk peran `owner` dan `hrd`.
+      responses:
+        '200':
+          description: Detail data karyawan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      tags:
+        - Karyawan (Users - FR-03)
+      summary: Perbarui Data Karyawan
+      description: |
+        Memperbarui data profil, jabatan, jadwal, atau konfigurasi karyawan.
+        Hanya Admin (`owner` / `hrd`) yang dapat mengubah data sensitif.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Data berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /users/{id}/deactivate:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - Karyawan (Users - FR-03)
+      summary: Nonaktifkan Karyawan
+      description: |
+        Menonaktifkan status karyawan. Alasan penonaktifan (`reason`) wajib disertakan
+        (maksimal 200 karakter) dan dicatat dalam audit log sistem.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeactivateUserRequest'
+      responses:
+        '200':
+          description: Karyawan berhasil dinonaktifkan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /users/{id}/reactivate:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - Karyawan (Users - FR-03)
+      summary: Aktifkan Kembali Karyawan
+      description: Mengubah kembali status karyawan nonaktif menjadi `aktif`.
+      responses:
+        '200':
+          description: Karyawan berhasil diaktifkan kembali
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /users/{id}/invitation:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - Karyawan (Users - FR-03)
+      summary: Kirim Ulang Undangan Akun
+      description: Mengirimkan kembali email undangan aktivasi bagi karyawan yang berstatus `diundang`.
+      responses:
+        '200':
+          description: Undangan berhasil dikirim ulang
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Email undangan berhasil dikirim ulang ke alamat tujuan.
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # Alias endpoints untuk kompatibilitas usulan di PDF
+  /employees:
+    get:
+      tags: [Karyawan (Users - FR-03)]
+      deprecated: true
+      summary: Alias GET /users
+      parameters:
+        - $ref: '#/paths/~1users/get/parameters/0'
+        - $ref: '#/paths/~1users/get/parameters/1'
+        - $ref: '#/paths/~1users/get/parameters/2'
+        - $ref: '#/paths/~1users/get/parameters/3'
+        - $ref: '#/paths/~1users/get/parameters/4'
+        - $ref: '#/paths/~1users/get/parameters/5'
+      responses:
+        '200':
+          $ref: '#/paths/~1users/get/responses/200'
+    post:
+      tags: [Karyawan (Users - FR-03)]
+      deprecated: true
+      summary: Alias POST /users
+      requestBody:
+        $ref: '#/paths/~1users/post/requestBody'
+      responses:
+        '201':
+          $ref: '#/paths/~1users/post/responses/201'
+
+  /employees/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Karyawan (Users - FR-03)]
+      deprecated: true
+      summary: Alias GET /users/{id}
+      responses:
+        '200':
+          $ref: '#/paths/~1users~1{id}/get/responses/200'
+    patch:
+      tags: [Karyawan (Users - FR-03)]
+      deprecated: true
+      summary: Alias PATCH /users/{id}
+      requestBody:
+        $ref: '#/paths/~1users~1{id}/patch/requestBody'
+      responses:
+        '200':
+          $ref: '#/paths/~1users~1{id}/patch/responses/200'
+
+  /employees/{id}/deactivate:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Karyawan (Users - FR-03)]
+      deprecated: true
+      summary: Alias POST /users/{id}/deactivate
+      requestBody:
+        $ref: '#/paths/~1users~1{id}~1deactivate/post/requestBody'
+      responses:
+        '200':
+          $ref: '#/paths/~1users~1{id}~1deactivate/post/responses/200'
+
+  /employees/{id}/reactivate:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Karyawan (Users - FR-03)]
+      deprecated: true
+      summary: Alias POST /users/{id}/reactivate
+      responses:
+        '200':
+          $ref: '#/paths/~1users~1{id}~1reactivate/post/responses/200'
+
+  /employees/{id}/invitation:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Karyawan (Users - FR-03)]
+      deprecated: true
+      summary: Alias POST /users/{id}/invitation
+      responses:
+        '200':
+          $ref: '#/paths/~1users~1{id}~1invitation/post/responses/200'
+
+  # ==========================================
+  # ME: PROFIL, JADWAL & LOKASI
+  # ==========================================
+  /me/profile:
+    get:
+      tags:
+        - Karyawan (Users - FR-03)
+      summary: Detail profil lengkap pengguna saat ini
+      description: Mengembalikan data lengkap pengguna termasuk relasi divisi, jabatan, jadwal, dan kantor (M21).
+      responses:
+        '200':
+          description: Profil pengguna berhasil diambil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /me/schedule-location:
+    get:
+      tags:
+        - Absensi Harian (F03, F04)
+      summary: Jadwal dan koordinat kantor pengguna saat ini
+      description: Digunakan aplikasi mobile dan web untuk menampilkan titik kantor, radius geofence, dan jam kerja (M26, KW10).
+      responses:
+        '200':
+          description: Data jadwal dan lokasi kantor pengguna berhasil diambil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleLocation'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /me/settings:
+    get:
+      tags:
+        - Karyawan (Users - FR-03)
+      summary: Preferensi akun pengguna
+      responses:
+        '200':
+          description: Pengaturan pengguna
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSettings'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    patch:
+      tags:
+        - Karyawan (Users - FR-03)
+      summary: Perbarui preferensi akun pengguna
+      description: Saat ini hanya toggle notifikasi push di Profil (M21).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSettings'
+      responses:
+        '200':
+          description: Pengaturan berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSettings'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /me/devices:
+    post:
+      tags:
+        - Karyawan (Users - FR-03)
+      summary: Daftarkan perangkat untuk notifikasi push
+      description: Dipanggil aplikasi mobile setelah login. Token yang sama cukup diperbarui, tidak dobel.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDeviceRequest'
+      responses:
+        '204':
+          description: Perangkat terdaftar
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ==========================================
+  # MASTER DATA: JADWAL KERJA (SCHEDULES)
+  # ==========================================
+  /schedules:
+    get:
+      tags:
+        - Data Master - Jadwal (F02)
+      summary: Daftar jadwal kerja tenant
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Daftar jadwal kerja
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Schedule'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+        - Data Master - Jadwal (F02)
+      summary: Tambah jadwal kerja baru (Admin/HRD/Owner)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScheduleRequest'
+      responses:
+        '201':
+          description: Jadwal berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /schedules/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags:
+        - Data Master - Jadwal (F02)
+      summary: Detail jadwal kerja
+      responses:
+        '200':
+          description: Detail jadwal kerja
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
+      tags:
+        - Data Master - Jadwal (F02)
+      summary: Perbarui jadwal kerja (Admin/HRD/Owner)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateScheduleRequest'
+      responses:
+        '200':
+          description: Jadwal berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags:
+        - Data Master - Jadwal (F02)
+      summary: Hapus jadwal kerja
+      responses:
+        '204':
+          description: Jadwal berhasil dihapus
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          description: Jadwal masih digunakan oleh karyawan aktif (code SCHEDULE_IN_USE)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  # ==========================================
+  # MASTER DATA: LOKASI KANTOR (LOCATIONS)
+  # ==========================================
+  /locations:
+    get:
+      tags:
+        - Data Master - Lokasi Kantor (F02)
+      summary: Daftar lokasi kantor tenant
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Daftar lokasi kantor
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Location'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+        - Data Master - Lokasi Kantor (F02)
+      summary: Tambah lokasi kantor baru (Admin/HRD/Owner)
+      description: Radius lokasi wajib antara 25 sampai 500 meter.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLocationRequest'
+      responses:
+        '201':
+          description: Lokasi berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /locations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags:
+        - Data Master - Lokasi Kantor (F02)
+      summary: Detail lokasi kantor
+      responses:
+        '200':
+          description: Detail lokasi kantor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
+      tags:
+        - Data Master - Lokasi Kantor (F02)
+      summary: Perbarui lokasi kantor (Admin/HRD/Owner)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLocationRequest'
+      responses:
+        '200':
+          description: Lokasi berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags:
+        - Data Master - Lokasi Kantor (F02)
+      summary: Hapus lokasi kantor
+      responses:
+        '204':
+          description: Lokasi berhasil dihapus
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          description: Lokasi masih digunakan oleh karyawan aktif (code LOCATION_IN_USE)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  # ==========================================
+  # ABSENSI HARIAN (F03, F04)
+  # ==========================================
+  /attendance/today:
+    get:
+      tags:
+        - Absensi Harian (F03, F04)
+      summary: Status absensi hari ini pengguna saat ini
+      description: |
+        Mengembalikan status hari ini, jadwal, lokasi kantor, dan ringkasan bulan berjalan
+        (M02, M08, M49, KW08). "Hari ini" dihitung di zona waktu tenant, bukan UTC.
+      responses:
+        '200':
+          description: Status absensi hari ini berhasil diambil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceToday'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /attendance/clock-in:
+    post:
+      tags:
+        - Absensi Harian (F03, F04)
+      summary: Clock-in kehadiran masuk kerja
+      description: |
+        Server mencatat jam sendiri dan menilai ulang lokasi; nilai dari perangkat hanya masukan.
+        - Akurasi GPS lebih buruk dari ±50 m → 422 `GPS_WEAK` (M29).
+        - Mock location → 422 `MOCK_LOCATION_DETECTED`.
+        - Jarak haversine ke titik kantor di luar radius → 422 `OUTSIDE_GEOFENCE` dengan `distance_m` dan `radius_m` (M07, KW13).
+          Dilewati bila karyawan punya `wfh_without_approval` atau WFH/Dinas Luar yang disetujui hari itu.
+        - Selfie wajib bila lokasi `selfie_required`; tanpa wajah → 422 `FACE_NOT_DETECTED` (M30).
+        - Status `hadir` bila masuk ≤ jam masuk + toleransi; selain itu `terlambat`, dihitung dari jam masuk
+          (09:14 dengan toleransi 10 menit = terlambat 14 menit).
+        - Hanya 1 clock-in per hari kerja → 409 `ALREADY_CLOCKED_IN`.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClockInRequest'
+            encoding:
+              selfie:
+                contentType: image/jpeg
+      responses:
+        '201':
+          description: Clock-in berhasil dicatat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClockInResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '422':
+          description: GPS lemah, di luar radius, lokasi palsu, atau wajah tidak terdeteksi
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/GeofenceProblem'
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
+
+  /attendance/clock-out:
+    post:
+      tags:
+        - Absensi Harian (F03, F04)
+      summary: Clock-out kehadiran pulang kerja
+      description: |
+        - Pulang sebelum jam pulang jadwal: `early_leave_note` wajib, maks. 200 karakter (M34, KW26).
+        - Clock-out lebih dari `overtime_after_minutes` (default 30) setelah jam pulang membuat pengajuan lembur.
+          Lembur dihitung dari jam pulang (17:00 → 17:44 = 44 menit), dibatasi `max_overtime_minutes` (default 180),
+          dan tidak melebihi jam kerja bila clock-in setelah jam pulang.
+        - Di luar radius → 422 `OUTSIDE_GEOFENCE`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClockOutRequest'
+      responses:
+        '200':
+          description: Clock-out berhasil dicatat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClockOutResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '422':
+          description: Belum clock-in, catatan pulang cepat kosong, GPS lemah, atau di luar radius
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/GeofenceProblem'
+
+  # ==========================================
+  # LEMBUR & PERSETUJUAN (F04)
+  # ==========================================
+  /overtime-requests:
+    get:
+      tags:
+        - Lembur & Persetujuan (F04)
+      summary: Daftar pengajuan lembur (W34)
+      description: Team Lead hanya melihat divisinya; HRD dan Owner melihat semua.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/DecisionStatus'
+        - $ref: '#/components/parameters/DepartmentQuery'
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Daftar pengajuan lembur dan jumlah per status tab
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OvertimeRequestList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /overtime-requests/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags:
+        - Lembur & Persetujuan (F04)
+      summary: Detail pengajuan lembur (W94)
+      responses:
+        '200':
+          description: Detail pengajuan lembur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OvertimeRequestDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /overtime-requests/{id}/approve:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    post:
+      tags:
+        - Lembur & Persetujuan (F04)
+      summary: Setujui pengajuan lembur (Team Lead divisinya, HRD, Owner)
+      responses:
+        '200':
+          description: Pengajuan lembur berhasil disetujui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OvertimeRequestDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Bukan atasan yang berwenang, atau menyetujui lembur sendiri
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /overtime-requests/{id}/reject:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    post:
+      tags:
+        - Lembur & Persetujuan (F04)
+      summary: Tolak pengajuan lembur (Team Lead divisinya, HRD, Owner)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectRequest'
+      responses:
+        '200':
+          description: Pengajuan lembur berhasil ditolak
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OvertimeRequestDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ==========================================
+  # IZIN DAN CUTI (F06)
+  # ==========================================
+  /me/leave-quota:
+    get:
+      tags:
+        - Izin dan Cuti (F06)
+      summary: Kuota cuti tahunan pengguna saat ini
+      responses:
+        '200':
+          description: Kuota cuti tahun berjalan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveQuota'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /me/leave-requests:
+    get:
+      tags:
+        - Izin dan Cuti (F06)
+      summary: Daftar pengajuan izin/cuti pengguna sendiri (M16, KW17)
+      description: Terbaru di atas.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/DecisionStatus'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Daftar pengajuan izin dan cuti
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LeaveRequest'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+        - Izin dan Cuti (F06)
+      summary: Ajukan izin, cuti tahunan, atau sakit (M05, KW18)
+      description: |
+        - Hanya `cuti` yang memotong kuota. Sisa kuota = total − terpakai − menunggu; kurang → 422 `LEAVE_QUOTA_EXCEEDED` (M18, KW20).
+        - Hari = hari kerja Senin–Jumat dari `start_date` sampai `end_date`, keduanya dihitung, dikurangi hari libur tenant.
+        - `end_date` sebelum `start_date` → 422 `INVALID_DATE_RANGE`; rentang hanya akhir pekan/libur → 422 `NO_WORKING_DAYS`.
+        - `sakit` lebih dari 1 hari kerja wajib `attachment` → 422 `DOCTOR_NOTE_REQUIRED`.
+        - Lampiran PDF atau JPG maks. 5 MB, diperiksa dari isi file → 422 `INVALID_ATTACHMENT`.
+        - Tumpang tindih dengan pengajuan menunggu/disetujui → 422 `OVERLAPPING_LEAVE`.
+        - Dikirim ke atasan langsung (`manager_id`); bila kosong ke HRD.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateLeaveRequest'
+            encoding:
+              attachment:
+                contentType: application/pdf, image/jpeg
+      responses:
+        '201':
+          description: Pengajuan berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /me/leave-requests/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags:
+        - Izin dan Cuti (F06)
+      summary: Detail pengajuan izin/cuti (M41 "Lihat detail pengajuan")
+      responses:
+        '200':
+          description: Detail pengajuan izin/cuti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /me/leave-requests/preview:
+    post:
+      tags:
+        - Izin dan Cuti (F06)
+      summary: Pratinjau perhitungan hari kerja dan cek kuota sebelum kirim
+      description: Tidak menyimpan apa pun. Dipakai untuk teks "3 hari kerja" dan peringatan kuota sebelum tombol Ajukan.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeavePreviewRequest'
+      responses:
+        '200':
+          description: Hasil pratinjau hari kerja dan kecukupan kuota
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeavePreview'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ==========================================
+  # RIWAYAT & REKAPITULASI (F05)
+  # ==========================================
+  /me/attendance:
+    get:
+      tags:
+        - Riwayat & Rekapitulasi (F05)
+      summary: Riwayat absensi bulanan pengguna sendiri (M15, KW16)
+      description: Bulan tanpa catatan mengembalikan 200 dengan `days` kosong, bukan 404 (M57, KW28).
+      parameters:
+        - $ref: '#/components/parameters/MonthQuery'
+      responses:
+        '200':
+          description: Riwayat harian satu bulan beserta ringkasan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthlyAttendance'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /me/attendance/{date}:
+    parameters:
+      - name: date
+        in: path
+        required: true
+        schema:
+          type: string
+          format: date
+    get:
+      tags:
+        - Riwayat & Rekapitulasi (F05)
+      summary: Detail absensi harian pengguna sendiri (M36)
+      responses:
+        '200':
+          description: Detail jam masuk, pulang, jarak, akurasi, perangkat, dan URL selfie bertanda tangan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceDayDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /attendance/recap:
+    get:
+      tags:
+        - Riwayat & Rekapitulasi (F05)
+      summary: Rekapitulasi absensi per karyawan (W05)
+      description: Team Lead hanya divisinya; HRD dan Owner semua. Statistik dihitung untuk filter yang aktif.
+      parameters:
+        - $ref: '#/components/parameters/MonthQuery'
+        - $ref: '#/components/parameters/DepartmentQuery'
+        - name: today_status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TodayStatus'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Rekap kehadiran per karyawan dan 4 kartu statistik
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceRecap'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /employees/{id}/attendance:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags:
+        - Riwayat & Rekapitulasi (F05)
+      summary: Riwayat bulanan absensi karyawan untuk admin (W37)
+      parameters:
+        - $ref: '#/components/parameters/MonthQuery'
+      responses:
+        '200':
+          description: Riwayat bulanan absensi karyawan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthlyAttendance'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /attendance/recap/exports:
+    post:
+      tags:
+        - Riwayat & Rekapitulasi (F05)
+      summary: Buat dokumen ekspor PDF rekapitulasi di server (W38)
+      description: |
+        Asinkron: balas 202 lalu klien memeriksa status (W97 → W98). Selfie hanya dimasukkan bila
+        `include_selfie` true. Setiap ekspor dicatat di audit log (siapa, kapan, periode, opsi).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExportRequest'
+      responses:
+        '202':
+          description: Pembuatan dokumen PDF sedang diproses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportJob'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /attendance/recap/exports/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags:
+        - Riwayat & Rekapitulasi (F05)
+      summary: Cek status pembuatan dan tautan unduhan dokumen PDF (W39, W98)
+      responses:
+        '200':
+          description: Status ekspor PDF dan URL unduhan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportJob'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JSON Web Token yang memuat klaim:
+        - `sub`: User ID
+        - `tid`: Tenant ID
+        - `role`: Peran pengguna (`super_admin`, `owner`, `hrd`, `team_lead`, `employee`, `cashier`)
+        - `eid`: Employee ID
+        - `mods`: Modul aktif tenant, misalnya `["attendance", "leave", "payroll"]`
+
+  responses:
+    UnauthorizedError:
+      description: Autentikasi gagal atau token tidak disertakan
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    ForbiddenError:
+      description: Tidak memiliki hak akses untuk tindakan ini
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    NotFoundError:
+      description: Data tidak ditemukan pada tenant ini
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    ValidationError:
+      description: Data input tidak valid (RFC 7807)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+    ConflictError:
+      description: Konflik status, misalnya sudah clock-in hari ini atau pengajuan sudah diputuskan
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    TooManyRequestsError:
+      description: Terlalu banyak permintaan; tunggu sesuai header Retry-After
+      headers:
+        Retry-After:
+          description: Detik sebelum boleh mencoba lagi
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+  parameters:
+    PageQuery:
+      name: page
+      in: query
+      description: Nomor halaman, mulai dari 1
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PerPageQuery:
+      name: per_page
+      in: query
+      description: Jumlah item per halaman (maks. 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    MonthQuery:
+      name: month
+      in: query
+      description: Bulan dalam format YYYY-MM; default bulan berjalan di zona waktu tenant
+      required: false
+      schema:
+        type: string
+        pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+        example: '2026-09'
+    DepartmentQuery:
+      name: department_id
+      in: query
+      description: Filter divisi/departemen; kosong = semua divisi
+      required: false
+      schema:
+        type: string
+
+  schemas:
+    # ------------------------------------------
+    # RFC 7807 PROBLEM DETAILS
+    # ------------------------------------------
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          example: https://ontrack.app/problems/validation-error
+        title:
+          type: string
+          example: Data yang dimasukkan tidak valid
+        status:
+          type: integer
+          example: 422
+        detail:
+          type: string
+          example: Format email atau field wajib belum diisi dengan benar.
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            email: Format email tidak valid
+            name: Nama wajib diisi
+
+    PaginationMeta:
+      type: object
+      required:
+        - page
+        - per_page
+        - total
+        - total_pages
+      properties:
+        page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 6
+        total_pages:
+          type: integer
+          example: 1
+
+    # ------------------------------------------
+    # AUTH SCHEMAS
+    # ------------------------------------------
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: daze@studiotigapagi.com
+        password:
+          type: string
+          format: password
+          example: Demo1234
+        remember_me:
+          type: boolean
+          default: false
+
+    AuthTokens:
+      type: object
+      required:
+        - access_token
+        - refresh_token
+        - token_type
+        - expires_in
+      properties:
+        access_token:
+          type: string
+          example: eyJhbGciOi...
+        refresh_token:
+          type: string
+          example: def502...
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          description: Masa berlaku access token dalam detik (900 detik / 15 menit)
+          example: 900
+
+    LoginResponse:
+      type: object
+      required:
+        - tokens
+        - user
+      properties:
+        tokens:
+          $ref: '#/components/schemas/AuthTokens'
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
+    UserProfile:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - name
+        - email
+        - role
+      properties:
+        id:
+          type: string
+          example: daze
+        tenant_id:
+          type: string
+          example: tenant-studiotigapagi
+        name:
+          type: string
+          example: Dhais Alfa Rysy
+        email:
+          type: string
+          example: daze@studiotigapagi.com
+        role:
+          type: string
+          enum: [super_admin, owner, hrd, team_lead, employee, cashier]
+          example: employee
+        department:
+          type: string
+          example: Design
+        position:
+          type: string
+          example: Lead Graphic Designer
+
+    # ------------------------------------------
+    # DEPARTMENTS SCHEMAS
+    # ------------------------------------------
+    Department:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - name
+        - created_at
+      properties:
+        id:
+          type: string
+          example: dept-design
+        tenant_id:
+          type: string
+          example: tenant-studiotigapagi
+        name:
+          type: string
+          example: Design
+        description:
+          type: string
+          nullable: true
+          example: Divisi desain grafis, produk, dan UI/UX
+        employee_count:
+          type: integer
+          example: 3
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateDepartmentRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: Marketing
+        description:
+          type: string
+          maxLength: 255
+          example: Tim pemasaran dan media sosial
+
+    UpdateDepartmentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 255
+
+    # ------------------------------------------
+    # POSITIONS SCHEMAS
+    # ------------------------------------------
+    Position:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - name
+        - created_at
+      properties:
+        id:
+          type: string
+          example: pos-lead-designer
+        tenant_id:
+          type: string
+          example: tenant-studiotigapagi
+        department_id:
+          type: string
+          nullable: true
+          example: dept-design
+        department_name:
+          type: string
+          nullable: true
+          example: Design
+        name:
+          type: string
+          example: Lead Graphic Designer
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreatePositionRequest:
+      type: object
+      required:
+        - name
+      properties:
+        department_id:
+          type: string
+          nullable: true
+          example: dept-design
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: Senior UI Designer
+        description:
+          type: string
+          maxLength: 255
+
+    UpdatePositionRequest:
+      type: object
+      properties:
+        department_id:
+          type: string
+          nullable: true
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 255
+
+    # ------------------------------------------
+    # USERS / EMPLOYEES SCHEMAS (FR-03)
+    # ------------------------------------------
+    UserResponse:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - name
+        - email
+        - role
+        - employment_type
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          example: daze
+        tenant_id:
+          type: string
+          example: tenant-studiotigapagi
+        name:
+          type: string
+          example: Dhais Alfa Rysy
+        email:
+          type: string
+          example: daze@studiotigapagi.com
+        phone:
+          type: string
+          nullable: true
+          example: 0857 3900 1122
+        department_id:
+          type: string
+          nullable: true
+          example: dept-design
+        department_name:
+          type: string
+          nullable: true
+          example: Design
+        position_id:
+          type: string
+          nullable: true
+          example: pos-lead-designer
+        position_name:
+          type: string
+          nullable: true
+          example: Lead Graphic Designer
+        role:
+          type: string
+          enum: [owner, hrd, team_lead, employee, cashier]
+          example: employee
+        employment_type:
+          type: string
+          enum: [tetap, kontrak, magang]
+          example: tetap
+        status:
+          type: string
+          enum: [aktif, nonaktif, diundang]
+          example: aktif
+        joined_at:
+          type: string
+          format: date
+          example: "2024-03-12"
+        manager_id:
+          type: string
+          nullable: true
+          example: ananda
+        manager_name:
+          type: string
+          nullable: true
+          example: Ananda Sartana
+        schedule_id:
+          type: string
+          nullable: true
+          example: sched-reguler
+        schedule_name:
+          type: string
+          nullable: true
+          example: Reguler · 09.00–17.00
+        location_id:
+          type: string
+          nullable: true
+          example: loc-sanur
+        location_name:
+          type: string
+          nullable: true
+          example: Kantor Sanur
+        allow_wfh_without_approval:
+          type: boolean
+          default: false
+          example: false
+        # SENSITIVE DATA (HANYA MUNCUL UNTUK OWNER & HRD):
+        base_salary:
+          type: string
+          nullable: true
+          description: Gaji pokok berupa string desimal (Hanya terlihat oleh Owner & HRD).
+          example: "7250000.00"
+        bank_name:
+          type: string
+          nullable: true
+          description: Nama bank (Hanya terlihat oleh Owner & HRD).
+          example: BCA
+        bank_account_number:
+          type: string
+          nullable: true
+          description: Nomor rekening bank (Hanya terlihat oleh Owner & HRD).
+          example: "0123454821"
+        bank_account_holder:
+          type: string
+          nullable: true
+          description: Nama pemilik rekening (Hanya terlihat oleh Owner & HRD).
+          example: Dhais Alfa Rysy
+        # DATA PENONAKTIFAN:
+        inactive_since:
+          type: string
+          format: date
+          nullable: true
+          example: "2026-10-01"
+        deactivation_reason:
+          type: string
+          nullable: true
+          maxLength: 200
+          example: Mengundurkan diri
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateUserRequest:
+      type: object
+      required:
+        - name
+        - email
+        - role
+        - employment_type
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: Putu Ayu Lestari
+        email:
+          type: string
+          format: email
+          example: ayu@studiotigapagi.com
+        phone:
+          type: string
+          example: 0812 3456 7890
+        department_id:
+          type: string
+          example: dept-design
+        position_id:
+          type: string
+          example: pos-ui-designer
+        role:
+          type: string
+          enum: [owner, hrd, team_lead, employee, cashier]
+          default: employee
+        employment_type:
+          type: string
+          enum: [tetap, kontrak, magang]
+          default: kontrak
+        status:
+          type: string
+          enum: [aktif, diundang]
+          default: diundang
+        joined_at:
+          type: string
+          format: date
+          example: "2026-11-01"
+        manager_id:
+          type: string
+          example: daze
+        schedule_id:
+          type: string
+          example: sched-reguler
+        location_id:
+          type: string
+          example: loc-sanur
+        allow_wfh_without_approval:
+          type: boolean
+          default: false
+        base_salary:
+          type: string
+          pattern: '^\d+(\.\d{2})?$'
+          example: "6500000.00"
+        bank_name:
+          type: string
+          example: BCA
+        bank_account_number:
+          type: string
+          example: "0987654321"
+        bank_account_holder:
+          type: string
+          example: Putu Ayu Lestari
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        phone:
+          type: string
+        department_id:
+          type: string
+          nullable: true
+        position_id:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [owner, hrd, team_lead, employee, cashier]
+        employment_type:
+          type: string
+          enum: [tetap, kontrak, magang]
+        joined_at:
+          type: string
+          format: date
+        manager_id:
+          type: string
+          nullable: true
+        schedule_id:
+          type: string
+          nullable: true
+        location_id:
+          type: string
+          nullable: true
+        allow_wfh_without_approval:
+          type: boolean
+        base_salary:
+          type: string
+          pattern: '^\d+(\.\d{2})?$'
+        bank_name:
+          type: string
+        bank_account_number:
+          type: string
+        bank_account_holder:
+          type: string
+
+    DeactivateUserRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 200
+          description: Alasan wajib penonaktifan karyawan (maks. 200 karakter)
+          example: Masa kontrak berakhir dan tidak diperpanjang.
+
+    # ------------------------------------------
+    # AUTH & PERAN (F01)
+    # ------------------------------------------
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: daze@studiotigapagi.com
+
+    ResetPasswordRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+          description: Token dari tautan email
+        password:
+          type: string
+          format: password
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$'
+          description: Minimal 8 karakter, huruf dan angka, minimal satu huruf besar
+
+    TenantRole:
+      type: string
+      description: Peran yang diatur per tenant (W18). `super_admin` tidak termasuk.
+      enum: [owner, hrd, team_lead, employee, cashier]
+
+    PermissionFeature:
+      type: string
+      description: Kunci fitur matriks W18, urut sesuai tampilan.
+      enum:
+        - employees.manage
+        - attendance.self
+        - leave.request
+        - leave.approve
+        - task.assign
+        - task.update
+        - payroll.manage
+        - payslip.self
+        - pos.transaction
+        - inventory.manage
+
+    RolePermissions:
+      type: object
+      required: [features]
+      properties:
+        features:
+          type: array
+          items:
+            type: object
+            required: [key, allowed]
+            properties:
+              key:
+                $ref: '#/components/schemas/PermissionFeature'
+              label:
+                type: string
+                readOnly: true
+                example: Kelola karyawan & pengaturan
+              allowed:
+                type: array
+                description: Peran yang boleh memakai fitur ini
+                items:
+                  $ref: '#/components/schemas/TenantRole'
+                example: [owner, hrd]
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    UserSettings:
+      type: object
+      properties:
+        push_notifications:
+          type: boolean
+          example: true
+
+    RegisterDeviceRequest:
+      type: object
+      required: [push_token, platform]
+      properties:
+        push_token:
+          type: string
+          description: Expo push token
+          example: ExponentPushToken[xxxxxxxxxxxxxxxx]
+        platform:
+          type: string
+          enum: [ios, android]
+        model:
+          type: string
+          example: iPhone 15 Pro
+        os_version:
+          type: string
+          example: iOS 17.4
+
+    # ------------------------------------------
+    # JADWAL & LOKASI (F02)
+    # ------------------------------------------
+    WorkDay:
+      type: string
+      enum: [sen, sel, rab, kam, jum, sab, min]
+
+    Schedule:
+      type: object
+      required:
+        - id
+        - name
+        - start_time
+        - end_time
+        - tolerance_minutes
+        - working_days
+        - overtime_after_minutes
+        - max_overtime_minutes
+        - allow_remote
+      properties:
+        id:
+          type: string
+          example: reguler
+        name:
+          type: string
+          example: Reguler
+        start_time:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          example: '09:00'
+        end_time:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          example: '17:00'
+        tolerance_minutes:
+          type: integer
+          example: 10
+        working_days:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkDay'
+          example: [sen, sel, rab, kam, jum]
+        overtime_after_minutes:
+          type: integer
+          example: 30
+        max_overtime_minutes:
+          type: integer
+          example: 180
+        allow_remote:
+          type: boolean
+          example: true
+        member_count:
+          type: integer
+          readOnly: true
+          example: 8
+
+    CreateScheduleRequest:
+      type: object
+      required: [name, start_time, end_time, working_days]
+      properties:
+        name:
+          type: string
+          example: Reguler
+        start_time:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          example: '09:00'
+        end_time:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          example: '17:00'
+        tolerance_minutes:
+          type: integer
+          minimum: 0
+          default: 10
+        working_days:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/WorkDay'
+          example: [sen, sel, rab, kam, jum]
+        overtime_after_minutes:
+          type: integer
+          minimum: 0
+          default: 30
+        max_overtime_minutes:
+          type: integer
+          minimum: 0
+          default: 180
+        allow_remote:
+          type: boolean
+          default: true
+
+    UpdateScheduleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        start_time:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+        end_time:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+        tolerance_minutes:
+          type: integer
+          minimum: 0
+        working_days:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/WorkDay'
+        overtime_after_minutes:
+          type: integer
+          minimum: 0
+        max_overtime_minutes:
+          type: integer
+          minimum: 0
+        allow_remote:
+          type: boolean
+
+    Location:
+      type: object
+      required: [id, name, address, latitude, longitude, radius_meters, selfie_required]
+      properties:
+        id:
+          type: string
+          example: sanur
+        name:
+          type: string
+          example: Kantor Sanur
+        address:
+          type: string
+          example: Jl. Danau Tamblingan No. 226, Sanur
+        latitude:
+          type: number
+          format: double
+          example: -8.6923
+        longitude:
+          type: number
+          format: double
+          example: 115.2621
+        radius_meters:
+          type: integer
+          minimum: 25
+          maximum: 500
+          example: 100
+        selfie_required:
+          type: boolean
+          example: true
+        member_count:
+          type: integer
+          readOnly: true
+          example: 16
+
+    CreateLocationRequest:
+      type: object
+      required: [name, address, latitude, longitude, radius_meters]
+      properties:
+        name:
+          type: string
+          example: Kantor Sanur
+        address:
+          type: string
+          example: Jl. Danau Tamblingan No. 226, Sanur
+        latitude:
+          type: number
+          format: double
+          example: -8.6923
+        longitude:
+          type: number
+          format: double
+          example: 115.2621
+        radius_meters:
+          type: integer
+          minimum: 25
+          maximum: 500
+          example: 100
+        selfie_required:
+          type: boolean
+          default: true
+
+    UpdateLocationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        radius_meters:
+          type: integer
+          minimum: 25
+          maximum: 500
+        selfie_required:
+          type: boolean
+
+    ScheduleLocation:
+      type: object
+      required: [schedule, location, timezone, wfh_without_approval]
+      properties:
+        schedule:
+          $ref: '#/components/schemas/Schedule'
+        location:
+          $ref: '#/components/schemas/Location'
+        timezone:
+          type: string
+          description: Zona waktu IANA tenant
+          example: Asia/Makassar
+        wfh_without_approval:
+          type: boolean
+          description: Bila true, clock-in tidak dicek radius
+          example: false
+
+    # ------------------------------------------
+    # ABSENSI HARIAN (F03, F04)
+    # ------------------------------------------
+    EmployeeRef:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          example: daze
+        name:
+          type: string
+          example: Dhais Alfa Rysy
+        initials:
+          type: string
+          example: DA
+        position:
+          type: string
+          example: Lead Graphic Designer
+        department_id:
+          type: string
+          example: design
+        department_name:
+          type: string
+          example: Design
+
+    ClockInStatus:
+      type: string
+      enum: [hadir, terlambat]
+
+    ClockInRequest:
+      type: object
+      required: [latitude, longitude, accuracy_m]
+      properties:
+        latitude:
+          type: number
+          format: double
+          example: -8.6923
+        longitude:
+          type: number
+          format: double
+          example: 115.2621
+        accuracy_m:
+          type: number
+          example: 15.4
+        device:
+          type: string
+          description: Model dan OS perangkat
+          example: iPhone 15 Pro, iOS 17.4
+        is_mock_location:
+          type: boolean
+          default: false
+        selfie:
+          type: string
+          format: binary
+          description: Foto JPEG. Wajib bila lokasi kantor `selfie_required`.
+
+    ClockInResult:
+      type: object
+      required: [attendance_id, status, late_minutes, clocked_in_at, distance_m, accuracy_m, location_name]
+      properties:
+        attendance_id:
+          type: string
+        status:
+          $ref: '#/components/schemas/ClockInStatus'
+        late_minutes:
+          type: integer
+          description: 0 bila hadir tepat waktu
+          example: 0
+        clocked_in_at:
+          type: string
+          format: date-time
+          example: '2026-10-01T00:52:00Z'
+        distance_m:
+          type: number
+          example: 42
+        accuracy_m:
+          type: number
+          example: 8
+        location_name:
+          type: string
+          example: Kantor Sanur
+        selfie_url:
+          type: string
+          format: uri
+          nullable: true
+          description: URL bertanda tangan, berlaku singkat
+
+    ClockOutRequest:
+      type: object
+      required: [latitude, longitude, accuracy_m]
+      properties:
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        accuracy_m:
+          type: number
+        is_mock_location:
+          type: boolean
+          default: false
+        early_leave_note:
+          type: string
+          maxLength: 200
+          description: Wajib bila clock-out sebelum jam pulang jadwal
+
+    ClockOutResult:
+      type: object
+      required: [clocked_out_at, worked_minutes, early_minutes, overtime_minutes, distance_m, accuracy_m]
+      properties:
+        clocked_out_at:
+          type: string
+          format: date-time
+          example: '2026-10-01T09:44:00Z'
+        worked_minutes:
+          type: integer
+          example: 532
+        early_minutes:
+          type: integer
+          description: 0 bila tidak pulang cepat
+          example: 0
+        overtime_minutes:
+          type: integer
+          description: 0 bila tidak ada lembur
+          example: 44
+        overtime_request_id:
+          type: string
+          nullable: true
+          description: Terisi bila pengajuan lembur dibuat
+        distance_m:
+          type: number
+          example: 40
+        accuracy_m:
+          type: number
+          example: 20
+
+    GeofenceProblem:
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          properties:
+            code:
+              type: string
+              enum:
+                - GPS_WEAK
+                - OUTSIDE_GEOFENCE
+                - MOCK_LOCATION_DETECTED
+                - FACE_NOT_DETECTED
+                - SELFIE_REQUIRED
+                - EARLY_LEAVE_NOTE_REQUIRED
+                - NOT_CLOCKED_IN
+            distance_m:
+              type: number
+              example: 1200
+            radius_m:
+              type: integer
+              example: 100
+            accuracy_m:
+              type: number
+              example: 120
+            required_accuracy_m:
+              type: integer
+              example: 50
+
+    MonthSummary:
+      type: object
+      required: [hadir, terlambat, izin, sakit, wfh, alpha, worked_minutes]
+      properties:
+        hadir:
+          type: integer
+          example: 19
+        terlambat:
+          type: integer
+          example: 2
+        izin:
+          type: integer
+          example: 1
+        sakit:
+          type: integer
+          example: 0
+        wfh:
+          type: integer
+          example: 0
+        alpha:
+          type: integer
+          example: 0
+        worked_minutes:
+          type: integer
+          example: 10342
+
+    AttendanceToday:
+      type: object
+      required: [date, timezone, state, is_working_day, schedule, location, month_summary]
+      properties:
+        date:
+          type: string
+          format: date
+          description: Tanggal hari ini di zona waktu tenant
+          example: '2026-10-01'
+        timezone:
+          type: string
+          example: Asia/Makassar
+        state:
+          type: string
+          enum: [not_clocked_in, clocked_in, clocked_out]
+        is_working_day:
+          type: boolean
+          description: false untuk akhir pekan jadwal atau hari libur tenant
+        holiday_name:
+          type: string
+          nullable: true
+        schedule:
+          $ref: '#/components/schemas/Schedule'
+        location:
+          $ref: '#/components/schemas/Location'
+        clock_in:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/ClockInResult'
+          nullable: true
+        clock_out:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/ClockOutResult'
+          nullable: true
+        month_summary:
+          $ref: '#/components/schemas/MonthSummary'
+        leave_remaining_days:
+          type: number
+          example: 9
+
+    # ------------------------------------------
+    # LEMBUR (F04)
+    # ------------------------------------------
+    DecisionStatus:
+      type: string
+      enum: [menunggu, disetujui, ditolak]
+
+    RejectRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: Pekerjaan bisa dilanjutkan besok pagi.
+
+    OvertimeRequest:
+      type: object
+      required: [id, employee, date, schedule_end, clock_out, minutes, status]
+      properties:
+        id:
+          type: string
+          example: daze-0110
+        employee:
+          $ref: '#/components/schemas/EmployeeRef'
+        date:
+          type: string
+          format: date
+          example: '2026-10-01'
+        schedule_end:
+          type: string
+          example: '17:00'
+        clock_in:
+          type: string
+          nullable: true
+          example: '08:52'
+        clock_out:
+          type: string
+          example: '17:44'
+        minutes:
+          type: integer
+          example: 44
+        distance_m:
+          type: number
+          nullable: true
+          example: 40
+        status:
+          $ref: '#/components/schemas/DecisionStatus'
+        reject_reason:
+          type: string
+          nullable: true
+
+    OvertimeRequestDetail:
+      allOf:
+        - $ref: '#/components/schemas/OvertimeRequest'
+        - type: object
+          required: [history]
+          properties:
+            history:
+              type: array
+              description: Riwayat keputusan, terlama di atas (W94)
+              items:
+                type: object
+                required: [at, text]
+                properties:
+                  at:
+                    type: string
+                    format: date-time
+                  text:
+                    type: string
+                    example: Disetujui oleh I Komang Agus S.
+
+    OvertimeRequestList:
+      type: object
+      required: [data, meta, counts]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OvertimeRequest'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+        counts:
+          type: object
+          description: Jumlah per tab status, mengikuti filter divisi dan tanggal
+          required: [menunggu, disetujui, ditolak]
+          properties:
+            menunggu:
+              type: integer
+              example: 3
+            disetujui:
+              type: integer
+              example: 5
+            ditolak:
+              type: integer
+              example: 1
+
+    # ------------------------------------------
+    # IZIN & CUTI (F06)
+    # ------------------------------------------
+    LeaveType:
+      type: string
+      description: |
+        `wfh` sudah ada di riwayat contoh tetapi belum bisa diajukan lewat formulir F06
+        (menunggu keputusan WFH / Dinas Luar).
+      enum: [cuti, izin, sakit, wfh]
+
+    LeaveQuota:
+      type: object
+      required: [year, total_days, used_days, pending_days, remaining_days, resets_on]
+      properties:
+        year:
+          type: integer
+          example: 2026
+        total_days:
+          type: number
+          example: 12
+        used_days:
+          type: number
+          example: 3
+        pending_days:
+          type: number
+          example: 0
+        remaining_days:
+          type: number
+          description: total − terpakai − menunggu
+          example: 9
+        resets_on:
+          type: string
+          format: date
+          example: '2027-01-01'
+
+    LeaveAttachment:
+      type: object
+      required: [name, size_bytes, content_type]
+      properties:
+        name:
+          type: string
+          example: surat-dokter-13okt.jpg
+        size_bytes:
+          type: integer
+          example: 1258291
+        content_type:
+          type: string
+          enum: [application/pdf, image/jpeg]
+        url:
+          type: string
+          format: uri
+          description: URL bertanda tangan, berlaku singkat
+
+    LeaveRequest:
+      type: object
+      required: [id, type, start_date, end_date, days, reason, status, approver, created_at]
+      properties:
+        id:
+          type: string
+        type:
+          $ref: '#/components/schemas/LeaveType'
+        start_date:
+          type: string
+          format: date
+          example: '2026-10-06'
+        end_date:
+          type: string
+          format: date
+          example: '2026-10-08'
+        days:
+          type: number
+          multipleOf: 0.5
+          description: Hari kerja; 0,5 untuk setengah hari
+          example: 3
+        reason:
+          type: string
+          maxLength: 200
+          example: Acara keluarga di Singaraja.
+        status:
+          $ref: '#/components/schemas/DecisionStatus'
+        attachment:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/LeaveAttachment'
+          nullable: true
+        approver:
+          type: object
+          required: [name, role]
+          properties:
+            name:
+              type: string
+              example: I Komang Agus S.
+            role:
+              type: string
+              example: Team Lead
+        reject_reason:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        decided_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateLeaveRequest:
+      type: object
+      required: [type, start_date, end_date, reason]
+      properties:
+        type:
+          type: string
+          enum: [cuti, izin, sakit]
+        start_date:
+          type: string
+          format: date
+          example: '2026-10-06'
+        end_date:
+          type: string
+          format: date
+          example: '2026-10-08'
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: Acara keluarga di Singaraja.
+        attachment:
+          type: string
+          format: binary
+          description: PDF atau JPG, maks. 5 MB. Wajib untuk sakit lebih dari 1 hari kerja.
+
+    LeavePreviewRequest:
+      type: object
+      required: [type, start_date, end_date]
+      properties:
+        type:
+          type: string
+          enum: [cuti, izin, sakit]
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+
+    LeavePreview:
+      type: object
+      required: [days, remaining_days, exceeds_quota, doctor_note_required]
+      properties:
+        days:
+          type: number
+          description: Hari kerja setelah dikurangi akhir pekan dan libur tenant
+          example: 3
+        remaining_days:
+          type: number
+          example: 2
+        exceeds_quota:
+          type: boolean
+          description: Hanya true untuk jenis cuti
+          example: true
+        doctor_note_required:
+          type: boolean
+          example: false
+        holidays:
+          type: array
+          description: Hari libur di dalam rentang yang tidak dihitung
+          items:
+            type: object
+            required: [date, name]
+            properties:
+              date:
+                type: string
+                format: date
+              name:
+                type: string
+
+    # ------------------------------------------
+    # RIWAYAT & REKAP (F05)
+    # ------------------------------------------
+    DayStatus:
+      type: string
+      enum: [hadir, terlambat, izin, sakit, wfh, alpha, libur]
+
+    AttendanceDay:
+      type: object
+      required: [date, status, overtime_minutes]
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2026-09-30'
+        status:
+          $ref: '#/components/schemas/DayStatus'
+        clock_in:
+          type: string
+          format: date-time
+          nullable: true
+        clock_out:
+          type: string
+          format: date-time
+          nullable: true
+        late_minutes:
+          type: integer
+          example: 0
+        worked_minutes:
+          type: integer
+          example: 487
+        overtime_minutes:
+          type: integer
+          example: 0
+        in_distance_m:
+          type: number
+          nullable: true
+        in_accuracy_m:
+          type: number
+          nullable: true
+        out_distance_m:
+          type: number
+          nullable: true
+        out_accuracy_m:
+          type: number
+          nullable: true
+
+    AttendanceDayDetail:
+      allOf:
+        - $ref: '#/components/schemas/AttendanceDay'
+        - type: object
+          properties:
+            location_name:
+              type: string
+              example: Kantor Sanur
+            device:
+              type: string
+              nullable: true
+              example: iPhone 15 Pro, iOS 17.4
+            selfie_url:
+              type: string
+              format: uri
+              nullable: true
+              description: URL bertanda tangan, berlaku sekitar 5 menit
+            selfie_url_expires_at:
+              type: string
+              format: date-time
+              nullable: true
+            early_leave_note:
+              type: string
+              nullable: true
+
+    MonthlyAttendance:
+      type: object
+      required: [month, summary, days]
+      properties:
+        month:
+          type: string
+          example: '2026-09'
+        employee:
+          $ref: '#/components/schemas/EmployeeRef'
+        summary:
+          $ref: '#/components/schemas/MonthSummary'
+        days:
+          type: array
+          description: Kosong bila bulan tanpa catatan
+          items:
+            $ref: '#/components/schemas/AttendanceDay'
+
+    TodayStatus:
+      type: string
+      enum: [hadir, terlambat, izin, sakit, wfh, alpha, belum]
+
+    AttendanceRecapRow:
+      type: object
+      required: [employee, hadir, terlambat, izin, alpha, worked_minutes, today_status]
+      properties:
+        employee:
+          $ref: '#/components/schemas/EmployeeRef'
+        hadir:
+          type: integer
+          example: 19
+        terlambat:
+          type: integer
+          example: 2
+        izin:
+          type: integer
+          description: Izin, cuti, dan sakit
+          example: 1
+        alpha:
+          type: integer
+          example: 0
+        worked_minutes:
+          type: integer
+          example: 10342
+        today_status:
+          $ref: '#/components/schemas/TodayStatus'
+
+    AttendanceRecapStats:
+      type: object
+      required:
+        - attendance_rate_percent
+        - late_count
+        - late_minutes_total
+        - leave_count
+        - leave_breakdown
+        - alpha_count
+      properties:
+        attendance_rate_percent:
+          type: number
+          example: 94
+        attendance_rate_change_percent:
+          type: number
+          nullable: true
+          description: Selisih dengan bulan sebelumnya
+          example: 2
+        late_count:
+          type: integer
+          example: 6
+        late_minutes_total:
+          type: integer
+          example: 74
+        leave_count:
+          type: integer
+          example: 4
+        leave_breakdown:
+          type: object
+          required: [cuti, izin, sakit]
+          properties:
+            cuti:
+              type: integer
+              example: 3
+            izin:
+              type: integer
+              example: 0
+            sakit:
+              type: integer
+              example: 1
+        alpha_count:
+          type: integer
+          example: 1
+
+    AttendanceRecap:
+      type: object
+      required: [month, data, meta, stats, employee_count]
+      properties:
+        month:
+          type: string
+          example: '2026-09'
+        employee_count:
+          type: integer
+          example: 16
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceRecapRow'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+        stats:
+          $ref: '#/components/schemas/AttendanceRecapStats'
+        pending_overtime_count:
+          type: integer
+          description: Untuk tombol "Persetujuan lembur · 3" di W05
+          example: 3
+
+    CreateExportRequest:
+      type: object
+      required: [month]
+      properties:
+        month:
+          type: string
+          pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+          example: '2026-09'
+        department_id:
+          type: string
+          nullable: true
+          description: Kosong = semua divisi
+        employee_id:
+          type: string
+          nullable: true
+          description: Isi untuk ekspor satu karyawan (W37)
+        include_summary:
+          type: boolean
+          default: true
+        include_daily:
+          type: boolean
+          default: true
+        include_selfie:
+          type: boolean
+          default: false
+
+    ExportJob:
+      type: object
+      required: [id, status, created_at]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [processing, ready, failed]
+        file_name:
+          type: string
+          example: Rekap_Kehadiran_Sep2026.pdf
+        pages:
+          type: integer
+          example: 3
+        size_bytes:
+          type: integer
+          example: 253952
+        download_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Terisi saat status ready; URL bertanda tangan
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          example: Ananda Sartana
