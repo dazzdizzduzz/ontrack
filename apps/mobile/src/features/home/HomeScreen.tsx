@@ -32,6 +32,7 @@ import {
   TENANT_TIME_ZONE,
 } from '@/features/attendance/data';
 import { useNow } from '@/features/attendance/useNow';
+import { useNotifications } from '@/features/notifications/NotificationProvider';
 import { textStyle } from '@/theme/text';
 
 function Stat({ label, value, unit }: { label: string; value: number; unit: string }) {
@@ -55,6 +56,7 @@ const PREVIEW_TIME = '17:44';
  */
 export function HomeScreen({ preview }: { preview?: HomePreview }) {
   const { top } = useSafeAreaInsets();
+  const { unreadCount } = useNotifications();
   const attendance = useAttendance();
   const { permissionsGranted } = attendance;
   const clockIn = preview ? sampleClockIn : attendance.clockIn;
@@ -93,8 +95,12 @@ export function HomeScreen({ preview }: { preview?: HomePreview }) {
               {greeting}, {sampleUser.firstName}
             </Text>
           </View>
-          {/* MOCK: notifikasi dikerjakan di F07. */}
-          <Pressable accessibilityRole="button" accessibilityLabel="Notifikasi" style={styles.bell}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={unreadCount > 0 ? `Notifikasi, ${unreadCount} belum dibaca` : 'Notifikasi'}
+            onPress={() => router.push('/notifikasi')}
+            style={styles.bell}
+          >
             <Icon name="bell" size={20} />
           </Pressable>
         </View>

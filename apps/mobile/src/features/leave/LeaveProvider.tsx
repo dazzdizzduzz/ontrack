@@ -12,6 +12,8 @@ type LeaveValue = {
   /** Pengajuan terakhir yang dikirim, untuk M41. */
   lastSubmitted: LeaveRequest | null;
   submit: (request: LeaveRequest) => void;
+  /** M17 "Batalkan pengajuan": hanya untuk yang masih menunggu. */
+  cancel: (id: string) => void;
 };
 
 const LeaveContext = createContext<LeaveValue | null>(null);
@@ -33,9 +35,20 @@ export function LeaveProvider({ children }: { children: ReactNode }) {
     setLastSubmitted(request);
   }, []);
 
+  const cancel = useCallback((id: string) => {
+    setRequests((current) => {
+      const target = current.find((item) => item.id === id);
+      if (target?.type === 'cuti' && target.status === 'menunggu') {
+        setQuota((q) => ({ ...q, pending: Math.max(0, q.pending - target.days) }));
+      }
+      return current.filter((item) => item.id !== id);
+    });
+    setLastSubmitted((last) => (last?.id === id ? null : last));
+  }, []);
+
   const value = useMemo(
-    () => ({ requests, quota, lastSubmitted, submit }),
-    [lastSubmitted, quota, requests, submit],
+    () => ({ requests, quota, lastSubmitted, submit, cancel }),
+    [cancel, lastSubmitted, quota, requests, submit],
   );
 
   return <LeaveContext.Provider value={value}>{children}</LeaveContext.Provider>;

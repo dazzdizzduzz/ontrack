@@ -90,3 +90,4 @@ export function isDemoCredentials(email: string, password: string): boolean {
 export * from './attendance';
 export * from './attendanceHistory';
 export * from './leave';
+export * from './notifications';

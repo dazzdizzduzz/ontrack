@@ -1,4 +1,5 @@
 import { clockOutSummary, parseClockTime } from './attendance';
+import type { LeaveType } from './leave';
 
 /** Status satu hari kerja di riwayat (M15, KW16, W05, W37). */
 export type DayStatus = 'hadir' | 'terlambat' | 'izin' | 'alpha';
@@ -17,6 +18,8 @@ export type AttendanceDay = {
   outAccuracy?: number;
   /** Lembur yang tercatat (menit); 0 bila tidak ada. */
   overtimeMinutes: number;
+  /** F07 (FR-16): diisi bila hari ini ditulis otomatis dari pengajuan yang disetujui (W44). */
+  leaveType?: LeaveType;
 };
 
 export type MonthSummary = Record<DayStatus, number>;
@@ -200,3 +203,16 @@ const sampleHistory: Record<string, AttendanceDay[]> = {
 export function sampleAttendance({ year, month }: MonthPeriod): AttendanceDay[] {
   return [...(sampleHistory[`${year}-${pad(month)}`] ?? [])].reverse();
 }
+
+/**
+ * MOCK W44: kehadiran Made Nandana P. Oktober 2026 setelah cuti 06–08/10 disetujui. Hari cuti
+ * berstatus izin (tidak dihitung alpha) dan membawa jenis pengajuannya.
+ */
+export const sampleLeaveSyncAttendance: AttendanceDay[] = [
+  { date: '2026-10-08', status: 'izin', leaveType: 'cuti', overtimeMinutes: 0 },
+  { date: '2026-10-07', status: 'izin', leaveType: 'cuti', overtimeMinutes: 0 },
+  { date: '2026-10-06', status: 'izin', leaveType: 'cuti', overtimeMinutes: 0 },
+  { date: '2026-10-05', status: 'hadir', clockIn: '08:55', clockOut: '17:12', overtimeMinutes: 0 },
+  { date: '2026-10-02', status: 'hadir', clockIn: '08:50', clockOut: '17:00', overtimeMinutes: 0 },
+  { date: '2026-10-01', status: 'hadir', clockIn: '08:57', clockOut: '17:03', overtimeMinutes: 0 },
+];

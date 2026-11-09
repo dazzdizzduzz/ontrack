@@ -2442,6 +2442,386 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/leave-requests/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Batalkan pengajuan yang masih menunggu (M17 "Batalkan pengajuan")
+         * @description Hanya pengajuan berstatus `menunggu`; yang sudah diputuskan → 409. Kuota tertahan dikembalikan dan
+         *     pengajuan hilang dari daftar atasan. Perlu keputusan: hapus permanen atau simpan dengan status `dibatalkan`.
+         *
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Pengajuan dibatalkan */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["UnauthorizedError"];
+                404: components["responses"]["NotFoundError"];
+                409: components["responses"]["ConflictError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/leave-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar pengajuan izin/cuti untuk disetujui (W03)
+         * @description Team Lead hanya melihat divisinya; HRD dan Owner melihat semua.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    status?: components["schemas"]["DecisionStatus"];
+                    /** @description Filter divisi/departemen; kosong = semua divisi */
+                    department_id?: components["parameters"]["DepartmentQuery"];
+                    /** @description Nomor halaman, mulai dari 1 */
+                    page?: components["parameters"]["PageQuery"];
+                    /** @description Jumlah item per halaman (maks. 100) */
+                    per_page?: components["parameters"]["PerPageQuery"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Daftar pengajuan dan jumlah per status tab */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LeaveApprovalList"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/leave-requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        /** Detail pengajuan + dampak bila disetujui (W40) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Detail pengajuan */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LeaveApprovalDetail"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+                404: components["responses"]["NotFoundError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/leave-requests/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Setujui pengajuan (W40, W41 · FR-14, FR-16)
+         * @description Dalam satu transaksi: status jadi `disetujui`, kuota cuti dipotong, hari kerja di rentang tanggal
+         *     ditulis ke kehadiran dengan status sesuai jenis (cuti/izin/sakit/wfh) dan `leave_request_id`
+         *     (FR-16, tidak dihitung alpha), lalu notifikasi `leave_approved` dikirim ke karyawan (FR-15).
+         *
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ApproveLeaveRequest"];
+                };
+            };
+            responses: {
+                /** @description Pengajuan disetujui */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LeaveApprovalDetail"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                /** @description Bukan atasan yang berwenang, atau menyetujui pengajuan sendiri */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                404: components["responses"]["NotFoundError"];
+                409: components["responses"]["ConflictError"];
+                /** @description Kuota cuti tidak cukup lagi (`LEAVE_QUOTA_EXCEEDED`) */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/leave-requests/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tolak pengajuan dengan alasan wajib (W04, W42, W45, W43 · FR-14)
+         * @description Kuota tidak berubah. Alasan dikirim ke karyawan lewat notifikasi `leave_rejected`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RejectRequest"];
+                };
+            };
+            responses: {
+                /** @description Pengajuan ditolak */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LeaveApprovalDetail"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+                404: components["responses"]["NotFoundError"];
+                409: components["responses"]["ConflictError"];
+                422: components["responses"]["ValidationError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Notifikasi pengguna, terbaru dulu (M20, KW25 · FR-15, FR-20) */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description true = hanya yang belum dibaca */
+                    unread?: boolean;
+                    /** @description Nomor halaman, mulai dari 1 */
+                    page?: components["parameters"]["PageQuery"];
+                    /** @description Jumlah item per halaman (maks. 100) */
+                    per_page?: components["parameters"]["PerPageQuery"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Daftar notifikasi */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["NotificationList"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Tandai satu notifikasi dibaca (saat item diketuk) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Ditandai dibaca */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["UnauthorizedError"];
+                404: components["responses"]["NotFoundError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Tandai semua dibaca (M20 "Tandai semua dibaca") */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Semua ditandai dibaca */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/attendance": {
         parameters: {
             query?: never;
@@ -3486,6 +3866,12 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             decided_at?: string | null;
+            /** @example I Komang Agus S. */
+            decided_by?: string | null;
+            /** @description DRAF F07 - catatan atasan saat menyetujui (M42 "Catatan atasan") */
+            decision_note?: string | null;
+            /** @description DRAF F07 - riwayat status (M17, M42, M43) */
+            history?: components["schemas"]["LeaveHistoryEvent"][];
         };
         CreateLeaveRequest: {
             /** @enum {string} */
@@ -3538,8 +3924,11 @@ export interface components {
                 name: string;
             }[];
         };
-        /** @enum {string} */
-        DayStatus: "hadir" | "terlambat" | "izin" | "sakit" | "wfh" | "alpha" | "libur";
+        /**
+         * @description `cuti` ditambahkan di draf F07 (FR-16)
+         * @enum {string}
+         */
+        DayStatus: "hadir" | "terlambat" | "izin" | "cuti" | "sakit" | "wfh" | "alpha" | "libur";
         AttendanceDay: {
             /**
              * Format: date
@@ -3561,6 +3950,8 @@ export interface components {
             in_accuracy_m?: number | null;
             out_distance_m?: number | null;
             out_accuracy_m?: number | null;
+            /** @description DRAF F07 - terisi bila hari ini ditulis otomatis dari pengajuan yang disetujui (W44, FR-16) */
+            leave_request_id?: string | null;
         };
         AttendanceDayDetail: components["schemas"]["AttendanceDay"] & {
             /** @example Kantor Sanur */
@@ -3585,7 +3976,7 @@ export interface components {
             days: components["schemas"]["AttendanceDay"][];
         };
         /** @enum {string} */
-        TodayStatus: "hadir" | "terlambat" | "izin" | "sakit" | "wfh" | "alpha" | "belum";
+        TodayStatus: "hadir" | "terlambat" | "izin" | "cuti" | "sakit" | "wfh" | "alpha" | "belum";
         AttendanceRecapRow: {
             employee: components["schemas"]["EmployeeRef"];
             /** @example 19 */
@@ -3677,6 +4068,96 @@ export interface components {
             created_at: string;
             /** @example Ananda Sartana */
             created_by?: string;
+        };
+        /** @description Satu baris "Riwayat status" (M17, M42, M43) */
+        LeaveHistoryEvent: {
+            /** @enum {string} */
+            kind: "diajukan" | "disetujui" | "ditolak" | "dibatalkan" | "tercatat_kehadiran";
+            /** Format: date-time */
+            at: string;
+            /** @example I Komang Agus S. */
+            actor?: string | null;
+            /** @example 06–08/10 otomatis tercatat sebagai Cuti */
+            note?: string | null;
+        };
+        ApproveLeaveRequest: {
+            /**
+             * @description Catatan untuk karyawan (opsional), dikirim bersama notifikasi (W40)
+             * @example Selamat menjalankan upacara, pastikan handover task ke Ari.
+             */
+            note?: string;
+        };
+        LeaveApprovalItem: {
+            id: string;
+            employee: components["schemas"]["EmployeeRef"];
+            type: components["schemas"]["LeaveType"];
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date: string;
+            days: number;
+            status: components["schemas"]["DecisionStatus"];
+            /** Format: date-time */
+            created_at: string;
+        };
+        LeaveApprovalList: {
+            data: components["schemas"]["LeaveApprovalItem"][];
+            counts: {
+                /** @example 3 */
+                menunggu: number;
+                disetujui: number;
+                ditolak: number;
+            };
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        LeaveApprovalDetail: components["schemas"]["LeaveRequest"] & {
+            employee: components["schemas"]["EmployeeRef"];
+            /** @description Bagian "Dampak bila disetujui" (W40) */
+            impact: {
+                /**
+                 * @description Hanya untuk cuti tahunan
+                 * @example 9
+                 */
+                quota_before?: number | null;
+                /** @example 6 */
+                quota_after?: number | null;
+                /** @description Rekan satu divisi yang cuti/izin di tanggal yang sama */
+                colleagues_on_leave: string[];
+                /** @description Task milik karyawan yang bertenggat di rentang tanggal */
+                tasks_due: {
+                    id: string;
+                    /** @example Integrasi API absensi */
+                    title: string;
+                    /** Format: date-time */
+                    due_at: string;
+                }[];
+            };
+        };
+        /** @enum {string} */
+        NotificationType: "leave_approved" | "leave_rejected" | "task_assigned" | "task_revision" | "task_overdue" | "task_comment" | "clockout_reminder" | "payslip_published";
+        Notification: {
+            id: string;
+            type: components["schemas"]["NotificationType"];
+            /** @example Cuti kamu disetujui */
+            title: string;
+            /** @example I Komang Agus S. menyetujui cuti 06–08/10/2026. */
+            body: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            read_at?: string | null;
+            /** @description Halaman tujuan saat item diketuk */
+            target: {
+                /** @enum {string} */
+                kind: "leave_request" | "task" | "payslip" | "attendance";
+                id: string;
+            };
+        };
+        NotificationList: {
+            data: components["schemas"]["Notification"][];
+            /** @example 4 */
+            unread_count: number;
+            meta: components["schemas"]["PaginationMeta"];
         };
     };
     responses: {

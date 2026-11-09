@@ -12,6 +12,7 @@ import { useEffect } from 'react';
 
 import { AttendanceProvider } from '@/features/attendance/AttendanceProvider';
 import { LeaveProvider } from '@/features/leave/LeaveProvider';
+import { NotificationProvider } from '@/features/notifications/NotificationProvider';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -33,8 +34,10 @@ export default function RootLayout() {
   return (
     <AttendanceProvider>
       <LeaveProvider>
-        <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false }} />
+        <NotificationProvider>
+          <StatusBar style="dark" />
+          <Stack screenOptions={{ headerShown: false }} />
+        </NotificationProvider>
       </LeaveProvider>
     </AttendanceProvider>
   );

@@ -5,15 +5,19 @@ import {
   formatDuration,
   formatPeriod,
   formatShortDuration,
+  leaveDayLabels,
+  leaveTypeLabels,
   sampleAttendance,
   sampleDefaultPeriod,
   sampleEmptyPeriod,
   samplePeriods,
   summarize,
   workedMinutes,
+  type AttendanceDay,
 } from '@on-track/core';
 import Image from 'next/image';
 import { useState } from 'react';
+import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { SelectField } from '@/components/ui/Field';
@@ -45,22 +49,38 @@ const MONTHS_SHORT = [
   'Des',
 ];
 
+/** W44: "3 cuti tahunan"; hari izin lain tanpa jenis tetap ditulis "izin". */
+function izinMeta(total: number, leaveDays: AttendanceDay[]): string {
+  if (total === 0) return 'tidak ada';
+  const counts = new Map<string, number>();
+  for (const day of leaveDays) {
+    const name = day.leaveType ? leaveTypeLabels[day.leaveType].toLowerCase() : 'izin';
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  const other = total - leaveDays.length;
+  if (other > 0) counts.set('izin', (counts.get('izin') ?? 0) + other);
+  return [...counts].map(([name, count]) => `${count} ${name}`).join(' · ');
+}
+
 /**
- * W37 · Detail Absensi Karyawan. MOCK: riwayat harian contoh hanya ada untuk Dhais Alfa Rysy
+ * W37 · Detail Absensi Karyawan, W44 · Kehadiran tersinkron dari cuti (contoh Made Nandana P.). MOCK: riwayat harian contoh hanya ada untuk Dhais Alfa Rysy
  * (sama dengan M15 dan KW16); karyawan lain menampilkan keterangan data belum tersedia.
  */
 export function EmployeeAttendance({ id, preview }: { id: string; preview?: 'kosong' }) {
   const row = rekapRows.find((item) => item.id === id);
   const profile = rekapProfiles[id];
   const [label, setLabel] = useState(
-    formatPeriod(preview === 'kosong' ? sampleEmptyPeriod : sampleDefaultPeriod),
+    formatPeriod(
+      preview === 'kosong' ? sampleEmptyPeriod : (profile?.defaultPeriod ?? sampleDefaultPeriod),
+    ),
   );
   const [page, setPage] = useState(0);
   const pdf = usePdfExport();
   const [exported, setExported] = useState<ExportOptions | null>(null);
 
   const period = samplePeriods[periodLabels.indexOf(label)] ?? sampleDefaultPeriod;
-  const days = profile ? sampleAttendance(period) : [];
+  const days = profile ? (profile.attendance ?? sampleAttendance)(period) : [];
+  const leaveDays = days.filter((day) => day.leaveType);
   const summary = summarize(days);
   const pages = Math.max(1, Math.ceil(days.length / PAGE_SIZE));
   const shown = days.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
@@ -127,6 +147,12 @@ export function EmployeeAttendance({ id, preview }: { id: string; preview?: 'kos
             />
           </div>
 
+          {profile.leaveSync && leaveDays.length > 0 && (
+            <Alert tone="info" title={profile.leaveSync.title}>
+              {profile.leaveSync.body}
+            </Alert>
+          )}
+
           {days.length === 0 ? (
             <EmptyRecord
               message={`${row?.name ?? 'Karyawan ini'} tidak punya catatan di ${label}.`}
@@ -147,7 +173,7 @@ export function EmployeeAttendance({ id, preview }: { id: string; preview?: 'kos
                 <StatCard
                   label="Izin / Cuti / Sakit"
                   value={String(summary.izin)}
-                  meta={summary.izin > 0 ? `${summary.izin} izin` : 'tidak ada'}
+                  meta={izinMeta(summary.izin, leaveDays)}
                 />
                 <StatCard
                   label="Total jam kerja"
@@ -201,7 +227,13 @@ export function EmployeeAttendance({ id, preview }: { id: string; preview?: 'kos
                             </td>
                             {/* MOCK: foto selfie disimpan server; "Ada" bila clock-in tercatat. */}
                             <td>{attended ? 'Ada' : '—'}</td>
-                            <td>{attended ? profile.office : '—'}</td>
+                            <td>
+                              {attended
+                                ? profile.office
+                                : day.leaveType
+                                  ? `${leaveDayLabels[day.leaveType]} disetujui`
+                                  : '—'}
+                            </td>
                             <td title={statusBadge(day, true).label}>
                               <Badge tone={badge.tone}>{badge.label}</Badge>
                             </td>

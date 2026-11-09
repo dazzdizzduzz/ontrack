@@ -51,6 +51,8 @@ tags:
     description: Kuota tahunan, pengajuan cuti/izin/sakit, dan surat dokter
   - name: Riwayat & Rekapitulasi (F05)
     description: Riwayat bulanan personal, rekapitulasi tenant, dan ekspor PDF
+  - name: Persetujuan Izin & Notifikasi (F07)
+    description: DRAF - persetujuan izin oleh atasan, sinkron ke kehadiran, dan notifikasi
 
 
 paths:
@@ -1583,6 +1585,209 @@ paths:
           $ref: '#/components/responses/ValidationError'
 
   # ==========================================
+  # PERSETUJUAN IZIN, NOTIFIKASI & SINKRON KEHADIRAN (F07)
+  # DRAF usulan frontend (x-draft: true) - perlu dikonfirmasi tim backend.
+  # ==========================================
+  /me/leave-requests/{id}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    post:
+      x-draft: true
+      tags:
+        - Persetujuan Izin & Notifikasi (F07)
+      summary: Batalkan pengajuan yang masih menunggu (M17 "Batalkan pengajuan")
+      description: |
+        Hanya pengajuan berstatus `menunggu`; yang sudah diputuskan → 409. Kuota tertahan dikembalikan dan
+        pengajuan hilang dari daftar atasan. Perlu keputusan: hapus permanen atau simpan dengan status `dibatalkan`.
+      responses:
+        '204':
+          description: Pengajuan dibatalkan
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /leave-requests:
+    get:
+      x-draft: true
+      tags:
+        - Persetujuan Izin & Notifikasi (F07)
+      summary: Daftar pengajuan izin/cuti untuk disetujui (W03)
+      description: Team Lead hanya melihat divisinya; HRD dan Owner melihat semua.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/DecisionStatus'
+        - $ref: '#/components/parameters/DepartmentQuery'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Daftar pengajuan dan jumlah per status tab
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveApprovalList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /leave-requests/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      x-draft: true
+      tags:
+        - Persetujuan Izin & Notifikasi (F07)
+      summary: Detail pengajuan + dampak bila disetujui (W40)
+      responses:
+        '200':
+          description: Detail pengajuan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveApprovalDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /leave-requests/{id}/approve:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    post:
+      x-draft: true
+      tags:
+        - Persetujuan Izin & Notifikasi (F07)
+      summary: Setujui pengajuan (W40, W41 · FR-14, FR-16)
+      description: |
+        Dalam satu transaksi: status jadi `disetujui`, kuota cuti dipotong, hari kerja di rentang tanggal
+        ditulis ke kehadiran dengan status sesuai jenis (cuti/izin/sakit/wfh) dan `leave_request_id`
+        (FR-16, tidak dihitung alpha), lalu notifikasi `leave_approved` dikirim ke karyawan (FR-15).
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveLeaveRequest'
+      responses:
+        '200':
+          description: Pengajuan disetujui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveApprovalDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Bukan atasan yang berwenang, atau menyetujui pengajuan sendiri
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '422':
+          description: Kuota cuti tidak cukup lagi (`LEAVE_QUOTA_EXCEEDED`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /leave-requests/{id}/reject:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    post:
+      x-draft: true
+      tags:
+        - Persetujuan Izin & Notifikasi (F07)
+      summary: Tolak pengajuan dengan alasan wajib (W04, W42, W45, W43 · FR-14)
+      description: Kuota tidak berubah. Alasan dikirim ke karyawan lewat notifikasi `leave_rejected`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectRequest'
+      responses:
+        '200':
+          description: Pengajuan ditolak
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveApprovalDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /me/notifications:
+    get:
+      x-draft: true
+      tags:
+        - Persetujuan Izin & Notifikasi (F07)
+      summary: Notifikasi pengguna, terbaru dulu (M20, KW25 · FR-15, FR-20)
+      parameters:
+        - name: unread
+          in: query
+          description: true = hanya yang belum dibaca
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Daftar notifikasi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /me/notifications/{id}/read:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    post:
+      x-draft: true
+      tags:
+        - Persetujuan Izin & Notifikasi (F07)
+      summary: Tandai satu notifikasi dibaca (saat item diketuk)
+      responses:
+        '204':
+          description: Ditandai dibaca
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /me/notifications/read-all:
+    post:
+      x-draft: true
+      tags:
+        - Persetujuan Izin & Notifikasi (F07)
+      summary: Tandai semua dibaca (M20 "Tandai semua dibaca")
+      responses:
+        '204':
+          description: Semua ditandai dibaca
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==========================================
   # RIWAYAT & REKAPITULASI (F05)
   # ==========================================
   /me/attendance:
@@ -3105,6 +3310,22 @@ components:
           type: string
           format: date-time
           nullable: true
+        decided_by:
+          type: string
+          nullable: true
+          x-draft: true
+          example: I Komang Agus S.
+        decision_note:
+          type: string
+          nullable: true
+          x-draft: true
+          description: DRAF F07 - catatan atasan saat menyetujui (M42 "Catatan atasan")
+        history:
+          type: array
+          x-draft: true
+          description: DRAF F07 - riwayat status (M17, M42, M43)
+          items:
+            $ref: '#/components/schemas/LeaveHistoryEvent'
 
     CreateLeaveRequest:
       type: object
@@ -3181,7 +3402,8 @@ components:
     # ------------------------------------------
     DayStatus:
       type: string
-      enum: [hadir, terlambat, izin, sakit, wfh, alpha, libur]
+      enum: [hadir, terlambat, izin, cuti, sakit, wfh, alpha, libur]
+      description: '`cuti` ditambahkan di draf F07 (FR-16)'
 
     AttendanceDay:
       type: object
@@ -3222,6 +3444,11 @@ components:
         out_accuracy_m:
           type: number
           nullable: true
+        leave_request_id:
+          type: string
+          nullable: true
+          x-draft: true
+          description: DRAF F07 - terisi bila hari ini ditulis otomatis dari pengajuan yang disetujui (W44, FR-16)
 
     AttendanceDayDetail:
       allOf:
@@ -3267,7 +3494,7 @@ components:
 
     TodayStatus:
       type: string
-      enum: [hadir, terlambat, izin, sakit, wfh, alpha, belum]
+      enum: [hadir, terlambat, izin, cuti, sakit, wfh, alpha, belum]
 
     AttendanceRecapRow:
       type: object
@@ -3420,3 +3647,182 @@ components:
         created_by:
           type: string
           example: Ananda Sartana
+
+    # ---------- F07 (DRAF, x-draft: true) ----------
+    LeaveHistoryEvent:
+      x-draft: true
+      type: object
+      required: [kind, at]
+      description: Satu baris "Riwayat status" (M17, M42, M43)
+      properties:
+        kind:
+          type: string
+          enum: [diajukan, disetujui, ditolak, dibatalkan, tercatat_kehadiran]
+        at:
+          type: string
+          format: date-time
+        actor:
+          type: string
+          nullable: true
+          example: I Komang Agus S.
+        note:
+          type: string
+          nullable: true
+          example: 06–08/10 otomatis tercatat sebagai Cuti
+
+    ApproveLeaveRequest:
+      x-draft: true
+      type: object
+      properties:
+        note:
+          type: string
+          maxLength: 200
+          description: Catatan untuk karyawan (opsional), dikirim bersama notifikasi (W40)
+          example: Selamat menjalankan upacara, pastikan handover task ke Ari.
+
+    LeaveApprovalItem:
+      x-draft: true
+      type: object
+      required: [id, employee, type, start_date, end_date, days, status, created_at]
+      properties:
+        id:
+          type: string
+        employee:
+          $ref: '#/components/schemas/EmployeeRef'
+        type:
+          $ref: '#/components/schemas/LeaveType'
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        days:
+          type: number
+          multipleOf: 0.5
+        status:
+          $ref: '#/components/schemas/DecisionStatus'
+        created_at:
+          type: string
+          format: date-time
+
+    LeaveApprovalList:
+      x-draft: true
+      type: object
+      required: [data, counts, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaveApprovalItem'
+        counts:
+          type: object
+          required: [menunggu, disetujui, ditolak]
+          properties:
+            menunggu:
+              type: integer
+              example: 3
+            disetujui:
+              type: integer
+            ditolak:
+              type: integer
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    LeaveApprovalDetail:
+      x-draft: true
+      allOf:
+        - $ref: '#/components/schemas/LeaveRequest'
+        - type: object
+          required: [employee, impact]
+          properties:
+            employee:
+              $ref: '#/components/schemas/EmployeeRef'
+            impact:
+              type: object
+              description: Bagian "Dampak bila disetujui" (W40)
+              required: [colleagues_on_leave, tasks_due]
+              properties:
+                quota_before:
+                  type: number
+                  nullable: true
+                  description: Hanya untuk cuti tahunan
+                  example: 9
+                quota_after:
+                  type: number
+                  nullable: true
+                  example: 6
+                colleagues_on_leave:
+                  type: array
+                  description: Rekan satu divisi yang cuti/izin di tanggal yang sama
+                  items:
+                    type: string
+                    example: Khamdafa W.
+                tasks_due:
+                  type: array
+                  description: Task milik karyawan yang bertenggat di rentang tanggal
+                  items:
+                    type: object
+                    required: [id, title, due_at]
+                    properties:
+                      id:
+                        type: string
+                      title:
+                        type: string
+                        example: Integrasi API absensi
+                      due_at:
+                        type: string
+                        format: date-time
+
+    NotificationType:
+      x-draft: true
+      type: string
+      enum: [leave_approved, leave_rejected, task_assigned, task_revision, task_overdue, task_comment, clockout_reminder, payslip_published]
+
+    Notification:
+      x-draft: true
+      type: object
+      required: [id, type, title, body, created_at, target]
+      properties:
+        id:
+          type: string
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        title:
+          type: string
+          example: Cuti kamu disetujui
+        body:
+          type: string
+          example: I Komang Agus S. menyetujui cuti 06–08/10/2026.
+        created_at:
+          type: string
+          format: date-time
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+        target:
+          type: object
+          description: Halaman tujuan saat item diketuk
+          required: [kind, id]
+          properties:
+            kind:
+              type: string
+              enum: [leave_request, task, payslip, attendance]
+            id:
+              type: string
+
+    NotificationList:
+      x-draft: true
+      type: object
+      required: [data, unread_count, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        unread_count:
+          type: integer
+          example: 4
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'

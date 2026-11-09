@@ -27,6 +27,23 @@ export type LeaveRequest = {
   reason: string;
   status: LeaveStatus;
   attachment?: LeaveAttachment;
+  /** F07: waktu diajukan dan diputuskan, sudah dalam format tampilan "01/10/2026 · 09:12". */
+  submittedAt?: string;
+  decidedAt?: string;
+  /** Atasan yang memutuskan. */
+  decidedBy?: string;
+  /** Catatan atasan saat menyetujui (M42) atau alasan penolakan (M43). */
+  decisionNote?: string;
+  /** MOCK: sisa kuota cuti setelah keputusan; nanti dari server. */
+  quotaLeft?: number;
+};
+
+/** Label pendek di badge kehadiran (W44: "CUTI") dan teks "tercatat sebagai Cuti". */
+export const leaveDayLabels: Record<LeaveType, string> = {
+  cuti: 'Cuti',
+  izin: 'Izin',
+  sakit: 'Sakit',
+  wfh: 'WFH',
 };
 
 export type LeaveQuota = {
@@ -212,3 +229,82 @@ export const sampleLeaveDraft: LeaveDraft = {
   end: '08/10/2026',
   reason: 'Acara keluarga di Singaraja.',
 };
+
+/** "Senin–Rabu, 06–08/10/2026 · 3 hari kerja" (M17) atau "Sen–Rab, 06–08/10/2026" (W40, `short`). */
+export function formatLeaveSpan(
+  request: Pick<LeaveRequest, 'start' | 'end'>,
+  short = false,
+): string {
+  const names = short
+    ? ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+    : ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const day = (iso: string) => names[new Date(`${iso}T00:00:00Z`).getUTCDay()];
+  const days = request.start === request.end ? day(request.start) : `${day(request.start)}–${day(request.end)}`;
+  const range = formatLeaveRange({ ...request, days: 1 }).split(' · ')[0];
+  return `${days}, ${range}`;
+}
+
+/** "3 hari kerja", "½ hari kerja". */
+export const formatWorkingDays = (days: number) => `${formatLeaveDays(days)} kerja`;
+
+// ---------------------------------------------------------------------------------------------
+// MOCK F07: pengajuan Dhais di M17 (menunggu), M42 (disetujui), dan M43 (ditolak). Id dibedakan
+// per status karena M17 dan M42 sebenarnya pengajuan yang sama sebelum dan sesudah disetujui.
+
+export const sampleLeaveDetails: Record<'menunggu' | 'disetujui' | 'ditolak', LeaveRequest> = {
+  menunggu: {
+    id: 'cuti-0610-menunggu',
+    type: 'cuti',
+    start: '2026-10-06',
+    end: '2026-10-08',
+    days: 3,
+    reason: 'Acara keluarga di Singaraja.',
+    status: 'menunggu',
+    attachment: { name: 'undangan-keluarga.pdf', sizeBytes: 240 * 1024, kind: 'PDF' },
+    submittedAt: '01/10/2026 · 09:12',
+    quotaLeft: 6,
+  },
+  disetujui: {
+    id: 'cuti-0610-disetujui',
+    type: 'cuti',
+    start: '2026-10-06',
+    end: '2026-10-08',
+    days: 3,
+    reason: 'Acara keluarga di Singaraja.',
+    status: 'disetujui',
+    submittedAt: '01/10/2026 · 09:12',
+    decidedAt: '01/10/2026 · 14:05',
+    decidedBy: 'I Komang Agus S.',
+    decisionNote: 'Selamat berlibur, pastikan handover task ke Khamdafa.',
+    quotaLeft: 6,
+  },
+  ditolak: {
+    id: 'cuti-2010',
+    type: 'cuti',
+    start: '2026-10-20',
+    end: '2026-10-21',
+    days: 2,
+    reason: 'Liburan bersama keluarga.',
+    status: 'ditolak',
+    submittedAt: '02/10/2026 · 08:15',
+    decidedAt: '02/10/2026 · 10:30',
+    decidedBy: 'I Komang Agus S.',
+    decisionNote: 'Bentrok dengan deadline klien Teneriffe. Mohon geser ke minggu berikutnya.',
+    quotaLeft: 6,
+  },
+};
+
+/** "01/10/2026 · 09:12" di zona waktu tenant, untuk waktu diajukan dan diputuskan. */
+export function formatStamp(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone,
+  }).formatToParts(date);
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? '';
+  return `${get('day')}/${get('month')}/${get('year')} · ${get('hour')}:${get('minute')}`;
+}

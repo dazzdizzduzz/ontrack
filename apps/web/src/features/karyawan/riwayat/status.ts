@@ -1,5 +1,6 @@
 import {
   formatShortDuration,
+  leaveDayLabels,
   parseClockTime,
   type AttendanceDay,
   type DayStatus,
@@ -32,6 +33,8 @@ export function lateMinutes(day: AttendanceDay): number {
 /** KW16 menulis "Terlambat" saja; `withLate` menambah lamanya untuk tooltip dan pembaca layar. */
 export function statusBadge(day: AttendanceDay, withLate = false): { tone: Tone; label: string } {
   const late = lateMinutes(day);
+  // W44: hari yang tersinkron dari pengajuan memakai jenisnya ("Cuti"), bukan "Izin".
+  if (day.leaveType) return { tone: 'neutral', label: leaveDayLabels[day.leaveType] };
   return {
     tone: tones[day.status],
     label: withLate && late > 0 ? `Terlambat · ${formatShortDuration(late)}` : statusLabels[day.status],

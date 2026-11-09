@@ -1,3 +1,6 @@
+import { sampleLeaveSyncAttendance, type AttendanceDay, type MonthPeriod } from '@on-track/core';
+
+
 /**
  * MOCK: rekap kehadiran contoh dari Figma W05 (September 2026, 16 karyawan; 6 tampil). Nanti
  * dihitung server per periode. Riwayat harian (W37) hanya ada untuk Dhais Alfa Rysy, dari
@@ -58,8 +61,29 @@ export const todayBadges: Record<TodayStatus, { tone: 'success' | 'warning' | 'n
 export const rekapDivisions = ['Design', 'Developer', 'Marketing', 'Finance', 'Manajemen'];
 
 /** Profil W37 untuk karyawan yang punya riwayat contoh. */
-export const rekapProfiles: Record<string, { schedule: string; office: string }> = {
+export type RekapProfile = {
+  schedule: string;
+  office: string;
+  /** Riwayat contoh per periode; bawaan memakai riwayat Dhais (M15, KW16). */
+  attendance?: (period: MonthPeriod) => AttendanceDay[];
+  defaultPeriod?: MonthPeriod;
+  /** W44: banner sinkron otomatis dari pengajuan yang disetujui (FR-16). */
+  leaveSync?: { title: string; body: string };
+};
+
+export const rekapProfiles: Record<string, RekapProfile> = {
   daze: { schedule: 'Reguler 09.00–17.00', office: 'Kantor Sanur' },
+  // MOCK W44: kondisi setelah cuti 06–08/10 disetujui di W41.
+  made: {
+    schedule: 'Reguler 09.00–17.00',
+    office: 'Kantor Sanur',
+    attendance: ({ year, month }) => (year === 2026 && month === 10 ? sampleLeaveSyncAttendance : []),
+    defaultPeriod: { year: 2026, month: 10 },
+    leaveSync: {
+      title: 'Tersinkron otomatis dari pengajuan cuti',
+      body: '06–08/10 dicatat sebagai Cuti setelah disetujui 01/10/2026 14:05 oleh Ananda Sartana. Tidak dihitung Alpha.',
+    },
+  },
 };
 
 /** Pembuat ekspor contoh W39. */

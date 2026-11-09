@@ -3,6 +3,7 @@ import {
   LEAVE_REASON_MAX,
   formatFileSize,
   formatLeaveDays,
+  formatStamp,
   leaveTypeLabels,
   parseDateInput,
   remainingQuota,
@@ -23,6 +24,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/Field';
 import { Icon } from '@/components/ui/Icon';
+import { TENANT_TIME_ZONE } from '@/features/attendance/data';
 import { TopAppBar } from '@/components/ui/TopAppBar';
 import { textStyle } from '@/theme/text';
 import { QuotaCard } from './LeaveParts';
@@ -110,6 +112,7 @@ export function LeaveFormScreen({ preview }: { preview?: LeaveFormPreview }) {
       reason: draft.reason.trim(),
       status: 'menunggu',
       attachment: draft.attachment,
+      submittedAt: formatStamp(new Date(), TENANT_TIME_ZONE),
     });
     router.replace('/izin/terkirim');
   }
