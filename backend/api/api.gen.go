@@ -5,7 +5,14 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// ErrorResponse defines model for ErrorResponse.
+type ErrorResponse struct {
+	// Message Example: Invalid credentials
+	Message string `json:"message"`
+}
 
 // HealthResponse defines model for HealthResponse.
 type HealthResponse struct {
@@ -13,8 +20,46 @@ type HealthResponse struct {
 	Status string `json:"status"`
 }
 
+// LoginRequest defines model for LoginRequest.
+type LoginRequest struct {
+	// Email Example: employee@ontrack.id
+	Email openapi_types.Email `json:"email"`
+
+	// Password Example: password123
+	Password string `json:"password"`
+}
+
+// LoginResponse defines model for LoginResponse.
+type LoginResponse struct {
+	// AccessToken RS256 signed JWT token
+	AccessToken string `json:"access_token"`
+
+	// ExpiresIn Masa berlaku token dalam detik (15 menit = 900)
+	//
+	// Example: 900
+	ExpiresIn int `json:"expires_in"`
+
+	// TokenType Example: Bearer
+	TokenType string `json:"token_type"`
+}
+
+// MessageResponse defines model for MessageResponse.
+type MessageResponse struct {
+	// Message Example: Logout successful
+	Message string `json:"message"`
+}
+
+// PostAuthLoginJSONRequestBody defines body for PostAuthLogin for application/json ContentType.
+type PostAuthLoginJSONRequestBody = LoginRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// PostAuthLogin Login user dan dapatkan token JWT
+	// (POST /auth/login)
+	PostAuthLogin(c *gin.Context)
+	// PostAuthLogout Logout user
+	// (POST /auth/logout)
+	PostAuthLogout(c *gin.Context)
 	// GetHealth Health check endpoint
 	// (GET /health)
 	GetHealth(c *gin.Context)
@@ -28,6 +73,32 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(c *gin.Context)
+
+// PostAuthLogin operation middleware
+func (siw *ServerInterfaceWrapper) PostAuthLogin(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.PostAuthLogin(c)
+}
+
+// PostAuthLogout operation middleware
+func (siw *ServerInterfaceWrapper) PostAuthLogout(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.PostAuthLogout(c)
+}
 
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
@@ -70,4 +141,6 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	}
 
 	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
+	router.POST(options.BaseURL+"/auth/login", wrapper.PostAuthLogin)
+	router.POST(options.BaseURL+"/auth/logout", wrapper.PostAuthLogout)
 }
