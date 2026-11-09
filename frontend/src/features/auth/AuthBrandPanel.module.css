@@ -1,0 +1,84 @@
+.panel {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-48);
+  width: min(640px, 44.45%);
+  padding: var(--space-48);
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font: var(--type-heading-h2-font);
+  letter-spacing: var(--type-heading-h2-tracking);
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.headline,
+.subline {
+  margin: 0;
+}
+
+.headline {
+  font: var(--type-display-l-font);
+  letter-spacing: var(--type-display-l-tracking);
+}
+
+.subline {
+  font: var(--type-body-m-font);
+  letter-spacing: var(--type-body-m-tracking);
+}
+
+.stats {
+  display: flex;
+  gap: var(--space-32);
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Nilai tampil di atas label, urutan DOM dt lalu dd tetap valid. */
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-4);
+}
+
+.statValue {
+  margin: 0;
+  font: var(--type-numeric-kpi-font);
+  letter-spacing: var(--type-numeric-kpi-tracking);
+}
+
+.statLabel {
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+/* W75/W76: hanya logo yang tampil, teks dan angka disembunyikan. */
+@media (max-width: 1023px) {
+  .panel {
+    width: 100%;
+    padding: var(--space-20) var(--space-32);
+  }
+
+  .copy,
+  .stats {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .panel {
+    padding: var(--space-16);
+  }
+}
