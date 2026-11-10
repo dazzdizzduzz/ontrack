@@ -17,7 +17,7 @@ import {
 import { color, radius, space } from '@on-track/tokens';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert as NativeAlert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert as NativeAlert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Alert } from '@/components/ui/Alert';
@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { textStyle } from '@/theme/text';
 import { SubmitSheet } from './SubmitSheet';
+import { TaskMenuSheet } from './TaskSheets';
 import { taskBadge } from './taskBadge';
 import { clientLabel, useTasks } from './TaskProvider';
 
@@ -55,7 +56,8 @@ function MetaRow({ icon, label, value, danger, last }: { icon: IconName; label: 
 }
 
 /**
- * M19 · Detail task, M44 · Unggah hasil (sheet), M45 · Dikirim ke Review, M46 · Perlu revisi.
+ * M19 · Detail task, M44 · Unggah hasil (sheet), M45 · Dikirim ke Review, M46 · Perlu revisi,
+ * M61 · Menu ⋯ (`?state=menu`).
  * Penanggung jawab hanya mengubah To Do ↔ In Progress; Review lewat kiriman hasil, Done oleh Team Lead.
  */
 export function TaskDetailScreen() {
@@ -65,6 +67,9 @@ export function TaskDetailScreen() {
   const [comment, setComment] = useState('');
   const [sheetOpen, setSheetOpen] = useState(state === 'kirim');
   const [previewState, setPreviewState] = useState(state);
+  const [menu, setMenu] = useState<'auto' | 'open' | 'closed'>('auto');
+  const menuOpen = menu === 'open' || (menu === 'auto' && state === 'menu');
+  const setMenuOpen = (open: boolean) => setMenu(open ? 'open' : 'closed');
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/task'));
   const stored = tasks.find((task) => task.id === id);
@@ -121,11 +126,10 @@ export function TaskDetailScreen() {
           <Text accessibilityRole="header" style={styles.barTitle}>
             Detail Task
           </Text>
-          {/* MOCK: menu lainnya (salin tautan, laporkan) belum didesain. */}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Menu lainnya"
-            onPress={() => NativeAlert.alert('Menu', 'Pilihan lainnya belum tersedia.')}
+            onPress={() => setMenuOpen(true)}
             style={styles.barButton}
           >
             <Icon name="more" size={20} />
@@ -269,6 +273,30 @@ export function TaskDetailScreen() {
           />
         </View>
       )}
+
+      <TaskMenuSheet
+        visible={menuOpen}
+        title={task.title}
+        meta={`${clientLabel(client)}${task.due ? ` · tenggat ${formatTaskDue(task.revision?.due ?? task.due)}` : ''}`}
+        onClose={() => setMenuOpen(false)}
+        items={[
+          // MOCK: halaman riwayat aktivitas dan alur perpanjangan tenggat belum didesain.
+          { icon: 'history', label: 'Lihat riwayat aktivitas', onPress: () => NativeAlert.alert('Riwayat aktivitas', 'Riwayat lengkap tersedia setelah API task tersambung.') },
+          {
+            icon: 'clock',
+            label: 'Minta perpanjangan tenggat',
+            onPress: () => NativeAlert.alert('Minta perpanjangan tenggat', `Permintaan akan dikirim ke ${reviewer}. Alurnya belum tersedia.`),
+          },
+          {
+            icon: 'paperclip',
+            label: 'Salin tautan task',
+            onPress: () => {
+              setMenuOpen(false);
+              Share.share({ message: `ontrack://task/${task.id}` });
+            },
+          },
+        ]}
+      />
 
       <SubmitSheet
         visible={sheetOpen}

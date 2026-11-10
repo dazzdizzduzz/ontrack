@@ -239,7 +239,7 @@ export const sampleSalaryProfiles: SalaryProfile[] = [
   { id: 'komang', name: 'I Komang Agus S.', initials: 'IK', position: 'Team Lead', division: 'Design', adjusted: false, components: { ...dhaisComponents, baseSalary: '6500000.00', transportAllowance: '750000.00', overtimeRate: '37572.25', projectBonus: '0.00', absentDeduction: '295454.55' }, base: '6500000.00', transport: '750000.00', updatedAt: '12/09/2026', logs: [{ id: 'k1', title: 'Profil gaji dibuat', by: 'HRD', at: '12/09/2026' }] },
   { id: 'khamdafa', name: 'Khamdafa W.', initials: 'KW', position: 'Graphic Designer', division: 'Design', adjusted: false, components: { ...dhaisComponents, baseSalary: '5500000.00', overtimeRate: '31791.91', projectBonus: '0.00', absentDeduction: '250000.00' }, base: '5500000.00', transport: '500000.00', updatedAt: '02/09/2026', logs: [{ id: 'w1', title: 'Profil gaji dibuat', by: 'HRD', at: '02/09/2026' }] },
   { id: 'made', name: 'Made Nandana P.', initials: 'MN', position: 'Developer', division: 'Developer', adjusted: true, components: null, base: '7500000.00', transport: '500000.00', logs: [] },
-  { id: 'ari', name: 'Ari Devananda K.', initials: 'AR', position: 'Developer', division: 'Developer', adjusted: false, components: null, base: '6500000.00', transport: '500000.00', logs: [] },
+  { id: 'putu', name: 'I Putu Ari D.', initials: 'AR', position: 'Developer', division: 'Developer', adjusted: false, components: null, base: '6500000.00', transport: '500000.00', logs: [] },
 ];
 
 export const samplePayrollRules: PayrollRules = {
@@ -279,3 +279,18 @@ export const sampleInvalidInputs: Partial<Record<SalaryField, string>> = {
 
 /** Sampel W57: tunjangan transport 500.000 → 750.000 dengan alasan. */
 export const sampleSalaryEdit = { field: 'transportAllowance' as const, value: '750.000', reason: 'Penyesuaian tunjangan transport sesuai kebijakan Q4.' };
+
+/**
+ * Nilai rumus global untuk kolom yang punya rumus (tarif lembur, potongan alpha). Dipakai untuk
+ * label "Nilai khusus HRD · rumus global Rp 40.462" bila nilai profil berbeda (W12, W55–W57).
+ */
+export function formulaValue(field: SalaryField, baseSalary: string, rules: PayrollRules): string | null {
+  if (field === 'overtimeRate') return fromCents(Math.round(toCents(baseSalary) / rules.overtimeDivisor));
+  if (field === 'absentDeduction') return fromCents(Math.round(toCents(baseSalary) / rules.absentDivisor));
+  return null;
+}
+
+/** true bila nilai berbeda dari rumus global (dibandingkan per rupiah). */
+export function differsFromFormula(value: string, formula: string): boolean {
+  return roundRupiah(toCents(value)) !== roundRupiah(toCents(formula));
+}

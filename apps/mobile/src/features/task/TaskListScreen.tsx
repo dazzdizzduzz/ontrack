@@ -9,7 +9,7 @@ import {
 import { color, radius, space } from '@on-track/tokens';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomNav } from '@/components/ui/BottomNav';
@@ -18,11 +18,26 @@ import { Icon } from '@/components/ui/Icon';
 import { mainTabs } from '@/components/ui/mainTabs';
 import { textStyle } from '@/theme/text';
 import { TaskCard } from './TaskCard';
+import { emptyFilters, FilterSheet, type DueFilter, type TaskFilters } from './TaskSheets';
 import { clientLabel, useTasks } from './TaskProvider';
 
 type Filter = TaskStatus | null;
 
-const filters: Filter[] = [null, 'todo', 'in_progress', 'review', 'done'];
+const statusChips: Filter[] = [null, 'todo', 'in_progress', 'review', 'done'];
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const stampMs = (stamp: string) => Date.parse(`${stamp}:00Z`);
+
+/** M60: filter tenggat relatif terhadap "sekarang" contoh Figma. */
+function matchesDue(task: Task, due: DueFilter): boolean {
+  const deadline = task.revision?.due ?? task.due;
+  if (due === 'semua') return true;
+  if (due === 'overdue') return isOverdue(task, sampleTaskNow);
+  if (!deadline) return false;
+  if (due === 'hari-ini') return deadline.slice(0, 10) === sampleTaskNow.slice(0, 10);
+  const diff = stampMs(deadline) - stampMs(sampleTaskNow);
+  return diff >= 0 && diff <= 7 * DAY_MS;
+}
 
 type Group = { key: string; label: string; tasks: Task[] };
 
@@ -41,21 +56,30 @@ function groupTasks(tasks: Task[]): Group[] {
 }
 
 /**
- * M06 · Task Saya dengan grup overdue, dan M22 · Kosong & offline. Pratinjau lewat `?state=`:
- * `kosong` (tanpa task) dan `offline` (banner offline + kosong, seperti Figma M22).
+ * M06 · Task Saya dengan grup overdue, M22 · Kosong & offline, dan M60 · Filter. Pratinjau lewat
+ * `?state=`: `kosong`, `offline` (banner + kosong, seperti Figma M22), dan `filter` (M60).
  */
 export function TaskListScreen() {
   const { state } = useLocalSearchParams<{ state?: string }>();
   const { top } = useSafeAreaInsets();
   const { tasks, projects, clients, people } = useTasks();
-  const [filter, setFilter] = useState<Filter>(null);
+  const [filters, setFilters] = useState<TaskFilters>(emptyFilters);
+  // Parameter rute bisa baru terbaca setelah render pertama, jadi pratinjau dihitung, bukan nilai awal state.
+  const [sheet, setSheet] = useState<'auto' | 'open' | 'closed'>('auto');
+  const filterOpen = sheet === 'open' || (sheet === 'auto' && state === 'filter');
+  const setFilterOpen = (open: boolean) => setSheet(open ? 'open' : 'closed');
+  const filter = filters.status;
+  const setFilter = (status: Filter) => setFilters((current) => ({ ...current, status }));
   // MOCK: status jaringan belum dibaca dari perangkat (perlu @react-native-community/netinfo).
   const offline = state === 'offline';
   const empty = state === 'kosong' || offline;
 
   const mine = empty ? [] : tasks.filter((task) => task.assigneeId === sampleTaskUserId);
   const active = mine.filter((task) => task.status !== 'done');
-  const visible = filter ? mine.filter((task) => task.status === filter) : active;
+  const visible = (filter ? mine.filter((task) => task.status === filter) : active).filter(
+    (task) => (!filters.priority || task.priority === filters.priority) && matchesDue(task, filters.due),
+  );
+  const extraFilters = (filters.priority ? 1 : 0) + (filters.due !== 'semua' ? 1 : 0);
   const groups = groupTasks(visible);
   const initials = people.find((person) => person.id === sampleTaskUserId)?.initials ?? '?';
 
@@ -77,14 +101,14 @@ export function TaskListScreen() {
           <Text accessibilityRole="header" style={styles.barTitle}>
             Task Saya
           </Text>
-          {/* MOCK: urutan dan filter lanjutan belum didesain. */}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Filter task"
-            onPress={() => Alert.alert('Filter task', 'Pilihan urutan dan filter lanjutan belum tersedia.')}
+            accessibilityLabel={extraFilters ? `Filter task, ${extraFilters} filter aktif` : 'Filter task'}
+            onPress={() => setFilterOpen(true)}
             style={styles.barAction}
           >
             <Icon name="filter" size={20} />
+            {extraFilters > 0 && <View style={styles.filterDot} />}
           </Pressable>
         </View>
       </View>
@@ -108,7 +132,7 @@ export function TaskListScreen() {
             style={styles.chipsScroll}
             contentContainerStyle={styles.chips}
           >
-            {filters.map((value) => {
+            {statusChips.map((value) => {
               const selected = value === filter;
               return (
                 <Pressable
@@ -145,10 +169,20 @@ export function TaskListScreen() {
                 })}
               </View>
             ))}
-            {groups.length === 0 && <Text style={styles.none}>Tidak ada task dengan status ini.</Text>}
+            {groups.length === 0 && <Text style={styles.none}>Tidak ada task yang cocok dengan filter ini.</Text>}
           </ScrollView>
         </>
       )}
+      <FilterSheet
+        key={filterOpen ? 'open' : 'closed'}
+        visible={filterOpen}
+        value={state === 'filter' && !extraFilters ? { ...filters, due: 'overdue' } : filters}
+        onClose={() => setFilterOpen(false)}
+        onApply={(next) => {
+          setFilters(next);
+          setFilterOpen(false);
+        }}
+      />
       <BottomNav items={mainTabs} active="Task" />
     </View>
   );
@@ -195,6 +229,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 44,
     height: 44,
+  },
+  filterDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
+    backgroundColor: color.text.primary,
   },
   chipsScroll: {
     flexGrow: 0,

@@ -3,7 +3,10 @@
 import {
   SALARY_REASON_MAX,
   componentsFromRules,
+  differsFromFormula,
   formatChangeValue,
+  formatMoneyPlain,
+  formulaValue,
   formatRupiah,
   formatSalaryInput,
   formatStamp,
@@ -211,11 +214,15 @@ export function SalaryEditor({ id, preview }: { id: string; preview?: SalaryPrev
                   .filter((field) => field.group === group.key)
                   .map((field) => {
                     const result = parsed[field.key];
+                    // Revisi Figma: kolom bernilai khusus HRD menyebut nilai rumus globalnya.
+                    const base = 'value' in parsed.baseSalary ? parsed.baseSalary.value : saved.baseSalary;
+                    const formula = formulaValue(field.key, base, rules);
+                    const custom = formula && 'value' in result && differsFromFormula(result.value, formula);
                     return (
                       <TextField
                         key={field.key}
                         label={field.label}
-                        helper={field.helper}
+                        helper={custom ? `Nilai khusus HRD · rumus global Rp ${formatMoneyPlain(formula)}` : field.helper}
                         error={touched[field.key] && 'error' in result ? result.error : undefined}
                         inputMode={field.kind === 'percent' ? 'decimal' : 'numeric'}
                         value={texts[field.key]}

@@ -44,15 +44,9 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(sampleTasks);
   const [projects, setProjects] = useState<Project[]>(sampleProjects);
 
+  // Jumlah task aktif per proyek dihitung dari daftar task (W47), jadi cukup menambah task.
   const addTask = useCallback((task: Task) => {
     setTasks((list) => [task, ...list]);
-    if (task.projectId) {
-      setProjects((list) =>
-        list.map((item) =>
-          item.id === task.projectId ? { ...item, activeTasks: item.activeTasks + 1 } : item,
-        ),
-      );
-    }
   }, []);
 
   const addProject = useCallback((project: Project) => {

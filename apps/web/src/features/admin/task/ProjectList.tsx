@@ -22,7 +22,7 @@ function formatDate(iso: string): string {
 
 /** W47 · Proyek (daftar per klien) dan W48 · Proyek baru (`?state=baru`). */
 export function ProjectList({ preview }: { preview?: 'baru' }) {
-  const { projects, clients, people, addProject } = useTasks();
+  const { projects, clients, people, tasks, addProject } = useTasks();
   const [clientId, setClientId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(preview === 'baru');
   const [toast, setToast] = useState<string | null>(null);
@@ -77,7 +77,9 @@ export function ProjectList({ preview }: { preview?: 'baru' }) {
               <h2 className={styles.projectName}>{project.name}</h2>
               {project.description && <p className={styles.projectDescription}>{project.description}</p>}
               <div className={styles.progressRow}>
-                <span>{project.activeTasks} task aktif</span>
+                <span>
+                  {tasks.filter((task) => task.projectId === project.id && task.status !== 'done').length} task aktif
+                </span>
                 <span className={styles.progressValue}>{project.progress}% selesai</span>
               </div>
               <div

@@ -77,8 +77,8 @@
   flex: none;
   flex-direction: column;
   margin: 0;
-  /* Figma 6/10 px; dibulatkan ke skala spasi 4, sama dengan panel detail lembur W94. */
-  padding: var(--space-8) var(--space-16);
+  /* Figma (revisi 10/11/2026): padding 8/12. */
+  padding: var(--space-8) var(--space-12);
   border-radius: var(--radius-md);
   background: var(--color-bg-subtle);
 }

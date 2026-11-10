@@ -8,15 +8,17 @@ import {
   type TaskFile,
 } from '@on-track/core';
 import Image from 'next/image';
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { TextareaField } from '@/components/ui/Field';
 import styles from './task-detail.module.css';
 
+type Upload = TaskFile & { progress: number };
+
 /**
- * Kirim hasil ke Review di web karyawan. Figma hanya punya versi mobile (M44 bottom sheet), jadi
- * web memakai isi yang sama di dalam dialog. Minimal satu file (US-07 AC-1).
+ * KW31 · Kirim hasil ke Review (web), isinya sama dengan M44. Minimal satu file (US-07 AC-1).
+ * MOCK: progres unggah disimulasikan; nanti POST /tasks/{id}/submissions (draf F09).
  */
 export function SubmitDialog({
   title,
@@ -33,9 +35,18 @@ export function SubmitDialog({
   onClose: () => void;
   onSubmit: (files: TaskFile[], note: string) => void;
 }) {
-  const [files, setFiles] = useState<TaskFile[]>(initialFiles);
+  const [files, setFiles] = useState<Upload[]>(() => initialFiles.map((file) => ({ ...file, progress: 100 })));
   const [note, setNote] = useState(initialNote);
   const [error, setError] = useState<string | null>(null);
+  const uploading = files.some((file) => file.progress < 100);
+
+  useEffect(() => {
+    if (!uploading) return;
+    const timer = setInterval(() => {
+      setFiles((list) => list.map((file) => ({ ...file, progress: Math.min(100, file.progress + 14) })));
+    }, 250);
+    return () => clearInterval(timer);
+  }, [uploading]);
 
   function pick(event: ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(event.target.files ?? []);
@@ -49,7 +60,7 @@ export function SubmitDialog({
       return;
     }
     setError(null);
-    setFiles((list) => [...list, ...picked.map((file) => ({ name: file.name, sizeBytes: file.size }))]);
+    setFiles((list) => [...list, ...picked.map((file) => ({ name: file.name, sizeBytes: file.size, progress: 0 }))]);
   }
 
   function handleSubmit(event: FormEvent) {
@@ -58,7 +69,10 @@ export function SubmitDialog({
       setError('Tambahkan minimal satu file hasil kerja.');
       return;
     }
-    onSubmit(files, note);
+    onSubmit(
+      files.map(({ name, sizeBytes }) => ({ name, sizeBytes })),
+      note,
+    );
   }
 
   return (
@@ -74,9 +88,8 @@ export function SubmitDialog({
           <Button variant="secondary" compact onClick={onClose}>
             Batal
           </Button>
-          <Button compact type="submit">
+          <Button compact type="submit" disabled={uploading}>
             Kirim ke Review
-            <Image src="/icons/send.svg" alt="" width={20} height={20} unoptimized />
           </Button>
         </>
       }
@@ -87,16 +100,35 @@ export function SubmitDialog({
             <Image src="/icons/paperclip.svg" alt="" width={20} height={20} unoptimized />
             <span className={styles.uploadText}>
               <span className={styles.uploadName}>{file.name}</span>
-              <span className={styles.uploadMeta}>{formatFileSize(file.sizeBytes)} · terunggah</span>
+              <span
+                className={styles.uploadTrack}
+                role="progressbar"
+                aria-label={`Unggahan ${file.name}`}
+                aria-valuenow={file.progress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <span
+                  className={`${styles.uploadFill} ${file.progress >= 100 ? styles.uploadDone : ''}`}
+                  style={{ width: `${file.progress}%` }}
+                />
+              </span>
+              <span className={styles.uploadMeta}>
+                {formatFileSize(file.sizeBytes)} · {file.progress >= 100 ? 'terunggah' : `${file.progress}%`}
+              </span>
             </span>
-            <button
-              type="button"
-              className={styles.iconButton}
-              aria-label={`Hapus ${file.name}`}
-              onClick={() => setFiles((list) => list.filter((_, i) => i !== index))}
-            >
-              <Image src="/icons/close-20.svg" alt="" width={20} height={20} unoptimized />
-            </button>
+            {file.progress >= 100 ? (
+              <Image src="/icons/check-ink.svg" alt="Terunggah" width={20} height={20} unoptimized />
+            ) : (
+              <button
+                type="button"
+                className={styles.iconButton}
+                aria-label={`Batalkan unggahan ${file.name}`}
+                onClick={() => setFiles((list) => list.filter((_, i) => i !== index))}
+              >
+                <Image src="/icons/close-20.svg" alt="" width={20} height={20} unoptimized />
+              </button>
+            )}
           </li>
         ))}
       </ul>

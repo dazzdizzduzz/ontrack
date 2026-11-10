@@ -21,6 +21,7 @@ import { TaskCard } from '@/components/ui/TaskCard';
 import { Toast } from '@/components/ui/Toast';
 import shared from '../employees/employees.module.css';
 import { ClientFilter } from './ClientFilter';
+import { ReadOnlyTaskDrawer } from './ReadOnlyTaskDrawer';
 import { ReviewDrawer } from './ReviewDrawer';
 import { emptyTaskDraft, TaskFormDialog } from './TaskFormDialog';
 import { clientFilters, clientLabel, useTasks } from '@/features/task/TaskProvider';
@@ -28,9 +29,9 @@ import styles from './task.module.css';
 
 /**
  * `?state=`: `baru` (W10), `validasi` (W49), `dibuat` (W50), `review` (W51), `selesai` (W52),
- * `revisi` (W53). `?view=daftar` = W46.
+ * `revisi` (W53), `lihat` (W99). `?view=daftar` = W46.
  */
-export type TaskBoardPreview = 'baru' | 'validasi' | 'dibuat' | 'review' | 'selesai' | 'revisi';
+export type TaskBoardPreview = 'baru' | 'validasi' | 'dibuat' | 'review' | 'selesai' | 'revisi' | 'lihat';
 
 /** Task contoh di kolom Review (W51–W53) dan Team Lead yang me-review. */
 const REVIEW_SAMPLE = 't-feed';
@@ -89,6 +90,7 @@ export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?:
   if (preview === 'selesai') {
     tasks = tasks.map((task) => (task.id === REVIEW_SAMPLE && task.status === 'review' ? { ...task, status: 'done' } : task));
   }
+  const [viewId, setViewId] = useState<string | null>(preview === 'lihat' ? 't-katalog' : null);
   const [reviewId, setReviewId] = useState<string | null>(
     preview === 'review' || preview === 'revisi' ? REVIEW_SAMPLE : null,
   );
@@ -127,6 +129,7 @@ export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?:
   }
 
   const reviewing = tasks.find((task) => task.id === reviewId && task.status === 'review');
+  const viewing = tasks.find((task) => task.id === viewId);
 
   return (
     <main className={shared.main}>
@@ -203,8 +206,8 @@ export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?:
                     status={task.status}
                     overdue={isOverdue(task, sampleTaskNow)}
                     highlight={task.id === highlightId}
-                    // W51: kartu di kolom Review membuka drawer review.
-                    onOpen={task.status === 'review' ? () => setReviewId(task.id) : undefined}
+                    // W51: kartu Review membuka drawer review; kartu lain detail baca saja (W99).
+                    onOpen={() => (task.status === 'review' ? setReviewId(task.id) : setViewId(task.id))}
                   />
                 ))}
                 {column.length === 0 && <p className={styles.columnEmpty}>Belum ada task.</p>}
@@ -282,6 +285,8 @@ export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?:
           </div>
         </div>
       )}
+
+      {viewing && <ReadOnlyTaskDrawer task={viewing} onClose={() => setViewId(null)} />}
 
       {reviewing && (
         <ReviewDrawer
