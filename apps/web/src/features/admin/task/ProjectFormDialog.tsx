@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { ChipButton } from '@/components/ui/Chip';
 import { Dialog } from '@/components/ui/Dialog';
 import { SelectField, TextareaField, TextField } from '@/components/ui/Field';
-import { useTasks } from './TaskProvider';
+import { useTasks } from '@/features/task/TaskProvider';
 import styles from './task.module.css';
 
 /** Anggota yang langsung tampil sebagai chip; sisanya muncul lewat "+ Tambah" (W48). */

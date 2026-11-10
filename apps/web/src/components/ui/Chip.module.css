@@ -29,3 +29,12 @@
   outline: 2px solid var(--color-text-primary);
   outline-offset: 2px;
 }
+
+/* F09: chip status yang tidak bisa dipilih (Done oleh Team Lead) tetap tampil seperti Figma. */
+.chip:disabled {
+  cursor: not-allowed;
+}
+
+.chip:disabled:not(.selected):hover {
+  background: var(--color-bg-surface);
+}

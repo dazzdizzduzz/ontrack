@@ -5,11 +5,11 @@ export const metadata: Metadata = { title: 'Task Board · On-Track' };
 
 type PageProps = { searchParams: Promise<{ state?: string; view?: string }> };
 
-const previews: TaskBoardPreview[] = ['baru', 'validasi', 'dibuat'];
+const previews: TaskBoardPreview[] = ['baru', 'validasi', 'dibuat', 'review', 'selesai', 'revisi'];
 
 /**
  * W06 · Task Board (Kanban). `?view=daftar` = W46. Contoh lewat `?state=`: `baru` (W10),
- * `validasi` (W49), dan `dibuat` (W50).
+ * `validasi` (W49), `dibuat` (W50), `review` (W51), `selesai` (W52), dan `revisi` (W53).
  */
 export default async function TaskPage({ searchParams }: PageProps) {
   const { state, view } = await searchParams;

@@ -21,12 +21,22 @@ import { TaskCard } from '@/components/ui/TaskCard';
 import { Toast } from '@/components/ui/Toast';
 import shared from '../employees/employees.module.css';
 import { ClientFilter } from './ClientFilter';
+import { ReviewDrawer } from './ReviewDrawer';
 import { emptyTaskDraft, TaskFormDialog } from './TaskFormDialog';
-import { clientFilters, clientLabel, useTasks } from './TaskProvider';
+import { clientFilters, clientLabel, useTasks } from '@/features/task/TaskProvider';
 import styles from './task.module.css';
 
-/** `?state=`: `baru` (W10), `validasi` (W49), `dibuat` (W50). `?view=daftar` = W46. */
-export type TaskBoardPreview = 'baru' | 'validasi' | 'dibuat';
+/**
+ * `?state=`: `baru` (W10), `validasi` (W49), `dibuat` (W50), `review` (W51), `selesai` (W52),
+ * `revisi` (W53). `?view=daftar` = W46.
+ */
+export type TaskBoardPreview = 'baru' | 'validasi' | 'dibuat' | 'review' | 'selesai' | 'revisi';
+
+/** Task contoh di kolom Review (W51–W53) dan Team Lead yang me-review. */
+const REVIEW_SAMPLE = 't-feed';
+const REVIEWER = 'komang';
+
+type ToastState = { title: string; body: string };
 export type TaskView = 'kanban' | 'daftar';
 
 const PERIOD = 'Oktober 2026';
@@ -57,24 +67,47 @@ const listStatusTones: Record<TaskStatus, Tone> = {
 const listRank = (task: Task) =>
   isOverdue(task, sampleTaskNow) ? 0 : { in_progress: 1, review: 2, todo: 3, done: 4 }[task.status];
 
+function createdToast(name?: string): ToastState {
+  return {
+    title: 'Task dibuat di kolom To Do',
+    body: `${name ?? 'Penanggung jawab'} sudah dinotifikasi lewat aplikasi & email.`,
+  };
+}
+
+/** W52: "Konten feed Instagram Oktober" pindah ke Done. */
+function doneToast(task: Task, name?: string): ToastState {
+  return { title: 'Task selesai', body: `"${task.title}" pindah ke Done. ${name ?? 'Penanggung jawab'} dinotifikasi.` };
+}
+
 export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?: TaskBoardPreview; view?: TaskView }) {
   const { tasks: stored, projects, clients, people, addTask } = useTasks();
-  // W50: contoh task yang baru dibuat dari isian W10, ditambahkan tanpa mengubah data bersama.
-  const tasks =
+  // W50 / W52: contoh hasil aksi ditampilkan tanpa mengubah data bersama.
+  let tasks =
     preview === 'dibuat' && !stored.some((task) => task.id === createdSample.id)
       ? [createdSample, ...stored]
       : stored;
+  if (preview === 'selesai') {
+    tasks = tasks.map((task) => (task.id === REVIEW_SAMPLE && task.status === 'review' ? { ...task, status: 'done' } : task));
+  }
+  const [reviewId, setReviewId] = useState<string | null>(
+    preview === 'review' || preview === 'revisi' ? REVIEW_SAMPLE : null,
+  );
   const [view, setView] = useState<TaskView>(initialView);
   const [clientId, setClientId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(preview === 'baru' || preview === 'validasi');
-  const [highlightId, setHighlightId] = useState<string | null>(
-    preview === 'dibuat' ? createdSample.id : null,
-  );
-  const [toast, setToast] = useState<string | null>(() =>
-    preview === 'dibuat'
-      ? (people.find((person) => person.id === createdSample.assigneeId)?.name ?? null)
-      : null,
-  );
+  const [highlightId, setHighlightId] = useState<string | null>(() => {
+    if (preview === 'dibuat') return createdSample.id;
+    return preview === 'selesai' ? REVIEW_SAMPLE : null;
+  });
+  const [toast, setToast] = useState<ToastState | null>(() => {
+    if (preview === 'dibuat') {
+      return createdToast(people.find((person) => person.id === createdSample.assigneeId)?.name);
+    }
+    const sample = stored.find((task) => task.id === REVIEW_SAMPLE);
+    return preview === 'selesai' && sample
+      ? doneToast(sample, people.find((person) => person.id === sample.assigneeId)?.name)
+      : null;
+  });
 
   const projectOf = (task: Task) => projects.find((project) => project.id === task.projectId);
   const clientOf = (task: Task) => clients.find((client) => client.id === projectOf(task)?.clientId);
@@ -90,8 +123,10 @@ export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?:
     setHighlightId(task.id);
     setView('kanban');
     setClientId(null);
-    setToast(personOf(task)?.name ?? 'Penanggung jawab');
+    setToast(createdToast(personOf(task)?.name));
   }
+
+  const reviewing = tasks.find((task) => task.id === reviewId && task.status === 'review');
 
   return (
     <main className={shared.main}>
@@ -119,8 +154,8 @@ export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?:
       </header>
 
       {toast && (
-        <Toast tone="success" title="Task dibuat di kolom To Do" onDismiss={() => setToast(null)}>
-          {toast} sudah dinotifikasi lewat aplikasi &amp; email.
+        <Toast tone="success" title={toast.title} onDismiss={() => setToast(null)}>
+          {toast.body}
         </Toast>
       )}
 
@@ -168,6 +203,8 @@ export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?:
                     status={task.status}
                     overdue={isOverdue(task, sampleTaskNow)}
                     highlight={task.id === highlightId}
+                    // W51: kartu di kolom Review membuka drawer review.
+                    onOpen={task.status === 'review' ? () => setReviewId(task.id) : undefined}
                   />
                 ))}
                 {column.length === 0 && <p className={styles.columnEmpty}>Belum ada task.</p>}
@@ -244,6 +281,28 @@ export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?:
             </table>
           </div>
         </div>
+      )}
+
+      {reviewing && (
+        <ReviewDrawer
+          task={reviewing}
+          reviewerId={REVIEWER}
+          preview={preview === 'review' || preview === 'revisi' ? preview : undefined}
+          onClose={() => setReviewId(null)}
+          onApproved={(task) => {
+            setReviewId(null);
+            setHighlightId(task.id);
+            setToast(doneToast(task, personOf(task)?.name));
+          }}
+          onRevised={(task) => {
+            setReviewId(null);
+            setHighlightId(task.id);
+            setToast({
+              title: 'Revisi diminta',
+              body: `"${task.title}" kembali ke In Progress. ${personOf(task)?.name ?? 'Penanggung jawab'} menerima catatan revisi.`,
+            });
+          }}
+        />
       )}
 
       {formOpen && (

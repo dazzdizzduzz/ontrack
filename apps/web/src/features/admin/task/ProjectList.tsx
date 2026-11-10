@@ -9,7 +9,7 @@ import { Toast } from '@/components/ui/Toast';
 import shared from '../employees/employees.module.css';
 import { ClientFilter } from './ClientFilter';
 import { emptyProjectDraft, ProjectFormDialog } from './ProjectFormDialog';
-import { clientFilters, clientLabel, useTasks } from './TaskProvider';
+import { clientFilters, clientLabel, useTasks } from '@/features/task/TaskProvider';
 import styles from './task.module.css';
 
 const PERIOD = 'Oktober 2026';

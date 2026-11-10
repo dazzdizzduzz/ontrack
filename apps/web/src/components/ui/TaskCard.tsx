@@ -15,6 +15,8 @@ type TaskCardProps = {
   status?: TaskCardStatus;
   /** W50: task yang baru dibuat diberi garis aksen. */
   highlight?: boolean;
+  /** Membuka detail (KW22, W51). Tombol menutupi seluruh kartu dan diberi nama task. */
+  onOpen?: () => void;
 };
 
 const badges: Record<TaskCardStatus, { tone: 'neutral' | 'warning' | 'success'; label: string }> = {
@@ -33,12 +35,18 @@ export function TaskCard({
   overdue = false,
   status = 'in_progress',
   highlight = false,
+  onOpen,
 }: TaskCardProps) {
   const badge = overdue ? { tone: 'danger' as const, label: 'Overdue' } : badges[status];
   return (
     <article
-      className={`${styles.card} ${overdue ? styles.overdue : ''} ${highlight ? styles.highlight : ''}`}
+      className={`${styles.card} ${overdue ? styles.overdue : ''} ${highlight ? styles.highlight : ''} ${onOpen ? styles.clickable : ''}`}
     >
+      {onOpen && (
+        <button type="button" className={styles.open} onClick={onOpen}>
+          <span className={styles.srOnly}>Buka detail {title}</span>
+        </button>
+      )}
       <div className={styles.row}>
         <span className={styles.client}>{client}</span>
         <Badge tone={badge.tone}>{badge.label}</Badge>

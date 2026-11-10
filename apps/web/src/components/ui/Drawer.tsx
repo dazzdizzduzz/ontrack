@@ -8,6 +8,8 @@ type DrawerProps = {
   title: string;
   /** Baris kecil di bawah judul, misalnya jabatan dan atasan (W40). */
   subtitle?: string;
+  /** Baris kecil di atas judul, misalnya klien · proyek (W51). */
+  eyebrow?: string;
   /** Elemen di kiri judul, misalnya avatar (W40). */
   leading?: ReactNode;
   onClose: () => void;
@@ -18,7 +20,7 @@ type DrawerProps = {
 };
 
 /** Panel kanan memakai <dialog> asli: fokus terkunci di dalam panel dan Esc menutup. */
-export function Drawer({ title, subtitle, leading, onClose, onSubmit, actions, children }: DrawerProps) {
+export function Drawer({ title, subtitle, eyebrow, leading, onClose, onSubmit, actions, children }: DrawerProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const titleId = useId();
@@ -45,6 +47,7 @@ export function Drawer({ title, subtitle, leading, onClose, onSubmit, actions, c
         <header className={styles.header}>
           {leading}
           <div className={styles.heading}>
+            {eyebrow && <p className={styles.eyebrow}>{eyebrow}</p>}
             <h2 id={titleId} ref={headingRef} tabIndex={-1} className={styles.title}>
               {title}
             </h2>

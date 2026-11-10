@@ -192,8 +192,7 @@ export function HomeScreen({ preview }: { preview?: HomePreview }) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Task hari ini</Text>
-            {/* MOCK: daftar task dikerjakan di F09. */}
-            <Text accessibilityRole="link" style={styles.link}>
+            <Text accessibilityRole="link" onPress={() => router.navigate('/task')} style={styles.link}>
               Lihat semua
             </Text>
           </View>

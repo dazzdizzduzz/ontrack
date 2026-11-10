@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { ChipButton } from '@/components/ui/Chip';
 import { Dialog } from '@/components/ui/Dialog';
 import { SelectField, TextareaField, TextField } from '@/components/ui/Field';
-import { useTasks } from './TaskProvider';
+import { useTasks } from '@/features/task/TaskProvider';
 import styles from './task.module.css';
 
 const NO_PROJECT = 'Tanpa proyek';

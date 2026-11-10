@@ -55,6 +55,8 @@ tags:
     description: DRAF - persetujuan izin oleh atasan, sinkron ke kehadiran, dan notifikasi
   - name: Proyek & Task (F08)
     description: DRAF - klien, proyek, serta membuat dan menugaskan task (Kanban & daftar)
+  - name: Progres Task (F09)
+    description: DRAF - task saya, ubah status, kirim hasil ke Review, setujui atau minta revisi, komentar
 
 
 paths:
@@ -1933,6 +1935,240 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ==========================================
+  # UPDATE PROGRES TASK & OVERDUE (F09)
+  # DRAF usulan frontend (x-draft: true) - perlu dikonfirmasi tim backend.
+  # ==========================================
+  /me/tasks:
+    get:
+      x-draft: true
+      tags:
+        - Progres Task (F09)
+      summary: Task milik pengguna (M06, M22, KW21)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+      responses:
+        '200':
+          description: Task saya dan ringkasan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /tasks/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      x-draft: true
+      tags:
+        - Progres Task (F09)
+      summary: Detail task + lampiran, komentar, kiriman hasil, revisi (M19, KW22, W51)
+      responses:
+        '200':
+          description: Detail task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /tasks/{id}/status:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    patch:
+      x-draft: true
+      tags:
+        - Progres Task (F09)
+      summary: Ubah status oleh penanggung jawab, hanya To Do ↔ In Progress (M19, KW22)
+      description: Review hanya lewat kiriman hasil; Done hanya lewat persetujuan Team Lead → selain itu 422 `TASK_STATUS_NOT_ALLOWED`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [todo, in_progress]
+      responses:
+        '200':
+          description: Status diubah
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /tasks/{id}/submissions:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    post:
+      x-draft: true
+      tags:
+        - Progres Task (F09)
+      summary: Unggah hasil dan kirim ke Review (M44, M45 · US-07 AC-1)
+      description: |
+        Status jadi `review`; Team Lead pembuat task menerima notifikasi `task_review`. Selama `review`,
+        task tidak dihitung overdue. Minimal satu file; tipe sama dengan lampiran task, maks. 20 MB per file.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                note:
+                  type: string
+                  maxLength: 200
+      responses:
+        '201':
+          description: Terkirim ke Review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '413':
+          description: File melebihi 20 MB
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /tasks/{id}/approve:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    post:
+      x-draft: true
+      tags:
+        - Progres Task (F09)
+      summary: Setujui hasil, pindah ke Done (W51, W52 · Team Lead / Owner)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment:
+                  type: string
+                  maxLength: 200
+                  description: Komentar review, dikirim ke penanggung jawab
+      responses:
+        '200':
+          description: Task selesai
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /tasks/{id}/revisions:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    post:
+      x-draft: true
+      tags:
+        - Progres Task (F09)
+      summary: Minta revisi, kembali ke In Progress (W53, M46)
+      description: Catatan wajib. Penanggung jawab menerima notifikasi `task_revision`. `due_at` opsional untuk tenggat baru.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [note]
+              properties:
+                note:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                due_at:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Revisi diminta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /tasks/{id}/comments:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    post:
+      x-draft: true
+      tags:
+        - Progres Task (F09)
+      summary: Tambah komentar (M19, KW22)
+      description: Pihak lain di task menerima notifikasi `task_comment`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+      responses:
+        '201':
+          description: Komentar ditambahkan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskComment'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         '422':
           $ref: '#/components/responses/ValidationError'
 
@@ -3926,7 +4162,7 @@ components:
     NotificationType:
       x-draft: true
       type: string
-      enum: [leave_approved, leave_rejected, task_assigned, task_revision, task_overdue, task_comment, clockout_reminder, payslip_published]
+      enum: [leave_approved, leave_rejected, task_assigned, task_review, task_approved, task_revision, task_overdue, task_comment, clockout_reminder, payslip_published]
 
     Notification:
       x-draft: true
@@ -4179,3 +4415,90 @@ components:
           items:
             type: string
             format: binary
+
+    # ---------- F09 (DRAF, x-draft: true) ----------
+    TaskComment:
+      x-draft: true
+      type: object
+      required: [id, author, body, created_at]
+      properties:
+        id:
+          type: string
+        author:
+          $ref: '#/components/schemas/EmployeeRef'
+        body:
+          type: string
+          example: Warna logo sudah oke, tolong perbesar spacing tagline.
+        created_at:
+          type: string
+          format: date-time
+
+    TaskFile:
+      x-draft: true
+      type: object
+      required: [id, name, size_bytes]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: logo-jbm-v3-final.ai
+        size_bytes:
+          type: integer
+        mime_type:
+          type: string
+        url:
+          type: string
+          format: uri
+        thumbnail_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Pratinjau untuk gambar (W51 "Hasil kerja")
+
+    TaskDetail:
+      x-draft: true
+      allOf:
+        - $ref: '#/components/schemas/Task'
+        - type: object
+          required: [comments]
+          properties:
+            created_by:
+              $ref: '#/components/schemas/EmployeeRef'
+            comments:
+              type: array
+              items:
+                $ref: '#/components/schemas/TaskComment'
+            submission:
+              type: object
+              nullable: true
+              description: Kiriman hasil terakhir (M45, W51)
+              required: [files, submitted_at]
+              properties:
+                files:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/TaskFile'
+                note:
+                  type: string
+                  nullable: true
+                submitted_at:
+                  type: string
+                  format: date-time
+            revision:
+              type: object
+              nullable: true
+              description: Permintaan revisi terakhir yang belum dijawab (M46)
+              required: [note, requested_by, requested_at]
+              properties:
+                note:
+                  type: string
+                requested_by:
+                  $ref: '#/components/schemas/EmployeeRef'
+                requested_at:
+                  type: string
+                  format: date-time
+                due_at:
+                  type: string
+                  format: date-time
+                  nullable: true

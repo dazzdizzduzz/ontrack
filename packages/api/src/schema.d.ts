@@ -3020,6 +3020,361 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Task milik pengguna (M06, M22, KW21) */
+        get: {
+            parameters: {
+                query?: {
+                    status?: components["schemas"]["TaskStatus"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Task saya dan ringkasan */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaskList"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        /** Detail task + lampiran, komentar, kiriman hasil, revisi (M19, KW22, W51) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Detail task */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaskDetail"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+                404: components["responses"]["NotFoundError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Ubah status oleh penanggung jawab, hanya To Do ↔ In Progress (M19, KW22)
+         * @description Review hanya lewat kiriman hasil; Done hanya lewat persetujuan Team Lead → selain itu 422 `TASK_STATUS_NOT_ALLOWED`.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "todo" | "in_progress";
+                    };
+                };
+            };
+            responses: {
+                /** @description Status diubah */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaskDetail"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+                422: components["responses"]["ValidationError"];
+            };
+        };
+        trace?: never;
+    };
+    "/tasks/{id}/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unggah hasil dan kirim ke Review (M44, M45 · US-07 AC-1)
+         * @description Status jadi `review`; Team Lead pembuat task menerima notifikasi `task_review`. Selama `review`,
+         *     task tidak dihitung overdue. Minimal satu file; tipe sama dengan lampiran task, maks. 20 MB per file.
+         *
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        files: string[];
+                        note?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Terkirim ke Review */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaskDetail"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+                409: components["responses"]["ConflictError"];
+                /** @description File melebihi 20 MB */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Setujui hasil, pindah ke Done (W51, W52 · Team Lead / Owner) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Komentar review, dikirim ke penanggung jawab */
+                        comment?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Task selesai */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaskDetail"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+                409: components["responses"]["ConflictError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{id}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Minta revisi, kembali ke In Progress (W53, M46)
+         * @description Catatan wajib. Penanggung jawab menerima notifikasi `task_revision`. `due_at` opsional untuk tenggat baru.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note: string;
+                        /** Format: date-time */
+                        due_at?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Revisi diminta */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaskDetail"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+                409: components["responses"]["ConflictError"];
+                422: components["responses"]["ValidationError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tambah komentar (M19, KW22)
+         * @description Pihak lain di task menerima notifikasi `task_comment`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        body: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Komentar ditambahkan */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaskComment"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                422: components["responses"]["ValidationError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/attendance": {
         parameters: {
             query?: never;
@@ -4332,7 +4687,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        NotificationType: "leave_approved" | "leave_rejected" | "task_assigned" | "task_revision" | "task_overdue" | "task_comment" | "clockout_reminder" | "payslip_published";
+        NotificationType: "leave_approved" | "leave_rejected" | "task_assigned" | "task_review" | "task_approved" | "task_revision" | "task_overdue" | "task_comment" | "clockout_reminder" | "payslip_published";
         Notification: {
             id: string;
             type: components["schemas"]["NotificationType"];
@@ -4453,6 +4808,48 @@ export interface components {
             priority?: components["schemas"]["TaskPriority"];
             description?: string;
             attachments?: string[];
+        };
+        TaskComment: {
+            id: string;
+            author: components["schemas"]["EmployeeRef"];
+            /** @example Warna logo sudah oke, tolong perbesar spacing tagline. */
+            body: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        TaskFile: {
+            id: string;
+            /** @example logo-jbm-v3-final.ai */
+            name: string;
+            size_bytes: number;
+            mime_type?: string;
+            /** Format: uri */
+            url?: string;
+            /**
+             * Format: uri
+             * @description Pratinjau untuk gambar (W51 "Hasil kerja")
+             */
+            thumbnail_url?: string | null;
+        };
+        TaskDetail: components["schemas"]["Task"] & {
+            created_by?: components["schemas"]["EmployeeRef"];
+            comments: components["schemas"]["TaskComment"][];
+            /** @description Kiriman hasil terakhir (M45, W51) */
+            submission?: {
+                files: components["schemas"]["TaskFile"][];
+                note?: string | null;
+                /** Format: date-time */
+                submitted_at: string;
+            } | null;
+            /** @description Permintaan revisi terakhir yang belum dijawab (M46) */
+            revision?: {
+                note: string;
+                requested_by: components["schemas"]["EmployeeRef"];
+                /** Format: date-time */
+                requested_at: string;
+                /** Format: date-time */
+                due_at?: string | null;
+            } | null;
         };
     };
     responses: {

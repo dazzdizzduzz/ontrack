@@ -34,8 +34,19 @@ export type Task = {
   status: TaskStatus;
   /** "2026-10-01T17:00" waktu tenant. */
   due?: string;
-  attachments?: { name: string; sizeBytes: number }[];
+  attachments?: TaskFile[];
+  /** F09: pembuat task (Team Lead / Owner) yang menerima kiriman ke Review. */
+  createdById?: string;
+  comments?: TaskComment[];
+  /** Kiriman hasil terakhir (M45, W51). */
+  submission?: { files: TaskFile[]; note?: string; at: string };
+  /** Permintaan revisi yang belum dijawab (M46); hilang saat hasil dikirim ulang. */
+  revision?: { byId: string; note: string; at: string; due?: string };
 };
+
+export type TaskFile = { name: string; sizeBytes: number };
+
+export type TaskComment = { id: string; authorId: string; text: string; at: string };
 
 export const taskStatusLabels: Record<TaskStatus, string> = {
   todo: 'To Do',
@@ -61,10 +72,36 @@ export const PROJECT_NAME_MAX = 80;
 export const TASK_ATTACHMENT_MAX_BYTES = 20 * 1024 * 1024;
 export const TASK_ATTACHMENT_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'ai', 'fig'];
 
-/** Overdue (FR-20): tenggat lewat dan belum selesai. `now` dalam format yang sama dengan `due`. */
-export function isOverdue(task: Pick<Task, 'due' | 'status'>, now: string): boolean {
-  return Boolean(task.due) && task.status !== 'done' && (task.due as string) < now;
+/**
+ * Overdue (FR-20): tenggat lewat dan belum selesai. Selama menunggu review tidak dihitung overdue
+ * (M45). Tenggat baru dari revisi (M46) menggantikan tenggat awal. `now` berformat sama dengan `due`.
+ */
+export function isOverdue(task: Pick<Task, 'due' | 'status' | 'revision'>, now: string): boolean {
+  const due = task.revision?.due ?? task.due;
+  return Boolean(due) && task.status !== 'done' && task.status !== 'review' && (due as string) < now;
 }
+
+/** "lewat 1 j", "lewat 45 m", "lewat 2 hari" untuk tenggat yang terlewat (M19). */
+export function formatOverdueBy(due: string, now: string): string {
+  const minutes = Math.round((Date.parse(`${now}:00Z`) - Date.parse(`${due}:00Z`)) / 60000);
+  if (minutes < 60) return `lewat ${Math.max(1, minutes)} m`;
+  if (minutes < 24 * 60) return `lewat ${Math.floor(minutes / 60)} j`;
+  return `lewat ${Math.floor(minutes / (24 * 60))} hari`;
+}
+
+/** "2026-10-01T16:40" -> "01/10 16:40" (M45). */
+export function formatTaskStamp(at: string): string {
+  const [date = '', time = ''] = at.split('T');
+  const [, month, day] = date.split('-');
+  return `${day}/${month} ${time}`;
+}
+
+/** Gambar dipratinjau, file lain memakai ikon klip (M19, W51). */
+export const isImageFile = (name: string) => /\.(png|jpe?g|gif|webp)$/i.test(name);
+
+/** Batas catatan kiriman hasil dan catatan revisi (M44: "72/200", W53: "45/200"). */
+export const TASK_NOTE_MAX = 200;
+export const TASK_COMMENT_MAX = 500;
 
 /** "2026-10-01T17:00" -> "01/10 · 17.00" (kartu Kanban W06). */
 export function formatTaskDue(due: string): string {
@@ -213,10 +250,47 @@ export const sampleTasks: Task[] = [
   { id: 't-brand', title: 'Brand guideline On-Track', projectId: 'ontrack', assigneeId: 'daze', priority: 'sedang', status: 'todo', due: '2026-10-04T17:00' },
   { id: 't-storyboard', title: 'Storyboard reels promo', projectId: 'social-pokemu', assigneeId: 'bagus', priority: 'rendah', status: 'todo', due: '2026-10-06T17:00' },
   { id: 't-mockup', title: 'Mockup kop surat', projectId: 'rebranding-jbm', assigneeId: 'daze', priority: 'rendah', status: 'todo', due: '2026-10-07T12:00' },
-  { id: 't-logo', title: 'Revisi logo JBM v3', projectId: 'rebranding-jbm', assigneeId: 'daze', priority: 'tinggi', status: 'in_progress', due: '2026-10-01T17:00' },
-  { id: 't-wireframe', title: 'Wireframe landing Teneriffe', projectId: 'website-teneriffe', assigneeId: 'khamdafa', priority: 'sedang', status: 'in_progress', due: '2026-10-02T12:00' },
+  {
+    id: 't-logo',
+    title: 'Revisi logo JBM v3',
+    projectId: 'rebranding-jbm',
+    assigneeId: 'daze',
+    priority: 'tinggi',
+    status: 'in_progress',
+    due: '2026-10-01T17:00',
+    createdById: 'komang',
+    description:
+      'Perbaiki proporsi simbol, perbesar jarak tagline, dan siapkan versi monokrom untuk kop surat. Referensi: feedback klien 30/09.',
+    attachments: [
+      { name: 'logo-jbm-v3.png', sizeBytes: 1.2 * 1024 * 1024 },
+      { name: 'feedback.pdf', sizeBytes: 180 * 1024 },
+    ],
+    comments: [
+      { id: 'c1', authorId: 'komang', text: 'Warna logo sudah oke, tolong perbesar spacing tagline.', at: '2026-10-01T10:24' },
+      { id: 'c2', authorId: 'daze', text: 'Siap, versi revisi saya upload sebelum 15.00.', at: '2026-10-01T10:40' },
+    ],
+  },
+  { id: 't-wireframe', title: 'Wireframe landing Teneriffe', projectId: 'website-teneriffe', assigneeId: 'daze', priority: 'sedang', status: 'in_progress', due: '2026-10-02T12:00' },
   { id: 't-katalog', title: 'Katalog produk 30 SKU', projectId: 'website-teneriffe', assigneeId: 'komang', priority: 'sedang', status: 'in_progress', due: '2026-10-05T17:00' },
-  { id: 't-feed', title: 'Konten feed Instagram Oktober', projectId: 'social-pokemu', assigneeId: 'bagus', priority: 'rendah', status: 'review', due: '2026-10-03T10:00' },
+  {
+    id: 't-feed',
+    title: 'Konten feed Instagram Oktober',
+    projectId: 'social-pokemu',
+    assigneeId: 'bagus',
+    priority: 'rendah',
+    status: 'review',
+    due: '2026-10-03T10:00',
+    createdById: 'komang',
+    submission: {
+      files: [
+        { name: 'feed-01.png', sizeBytes: 820 * 1024 },
+        { name: 'feed-02.png', sizeBytes: 790 * 1024 },
+        { name: 'feed-03.png', sizeBytes: 805 * 1024 },
+      ],
+      note: '3 desain feed minggu 1–2 sudah sesuai brief. Caption ada di dokumen terlampir.',
+      at: '2026-10-02T18:12',
+    },
+  },
   { id: 't-figma', title: 'Setup Figma Variables', projectId: 'ontrack', assigneeId: 'daze', priority: 'sedang', status: 'done', due: '2026-09-30T17:00' },
   { id: 't-moodboard', title: 'Moodboard rebranding', projectId: 'rebranding-jbm', assigneeId: 'daze', priority: 'rendah', status: 'done', due: '2026-09-28T17:00' },
 ];
@@ -240,3 +314,27 @@ export const sampleProjectDraft: ProjectDraft = {
   description: 'Konsep visual & konten media sosial Copia untuk Q4.',
   memberIds: ['daze', 'bagus'],
 };
+
+/** Pengguna yang login di contoh karyawan (M06, KW21). */
+export const sampleTaskUserId = 'daze';
+
+/** Isian contoh M44: dua file (satu masih terunggah 72%) dan catatan 72/200. */
+export const sampleSubmissionDraft = {
+  files: [
+    { name: 'logo-jbm-v3-final.ai', sizeBytes: 4.2 * 1024 * 1024 },
+    { name: 'logo-jbm-v3-preview.png', sizeBytes: 860 * 1024 },
+  ],
+  note: 'Proporsi simbol & jarak tagline sudah diperbaiki, versi monokrom terlampir.',
+};
+
+/** Contoh M46: revisi dari Team Lead dengan tenggat baru. */
+export const sampleRevision = {
+  byId: 'komang',
+  note: 'Tagline masih terlalu kecil di versi monokrom, perbesar 2pt.',
+  at: '2026-10-02T09:15',
+  due: '2026-10-03T17:00',
+};
+
+/** Komentar review contoh W51 (40/200) dan catatan revisi W53 (45/200). */
+export const sampleReviewComment = 'Mantap, warna sudah sesuai brand Pokemu.';
+export const sampleRevisionNote = 'Feed 03 perlu ganti foto produk, kurang tajam.';
