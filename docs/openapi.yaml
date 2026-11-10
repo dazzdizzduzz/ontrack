@@ -57,6 +57,8 @@ tags:
     description: DRAF - klien, proyek, serta membuat dan menugaskan task (Kanban & daftar)
   - name: Progres Task (F09)
     description: DRAF - task saya, ubah status, kirim hasil ke Review, setujui atau minta revisi, komentar
+  - name: Komponen Gaji (F10)
+    description: DRAF - komponen gaji per karyawan, log perubahan, dan aturan global payroll
 
 
 paths:
@@ -2169,6 +2171,145 @@ paths:
                 $ref: '#/components/schemas/TaskComment'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ==========================================
+  # KONFIGURASI KOMPONEN GAJI (F10)
+  # DRAF usulan frontend (x-draft: true) - perlu dikonfirmasi tim backend.
+  # Hanya HRD dan Owner (izin payroll.manage).
+  # ==========================================
+  /payroll/salary-profiles:
+    get:
+      x-draft: true
+      tags:
+        - Komponen Gaji (F10)
+      summary: Daftar profil komponen gaji per karyawan (W54)
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Profil gaji + ringkasan kelengkapan
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, summary, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SalaryProfileSummary'
+                  summary:
+                    type: object
+                    required: [total, complete, incomplete]
+                    properties:
+                      total:
+                        type: integer
+                        example: 16
+                      complete:
+                        type: integer
+                        example: 14
+                      incomplete:
+                        type: integer
+                        example: 2
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /payroll/salary-profiles/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      x-draft: true
+      tags:
+        - Komponen Gaji (F10)
+      summary: Komponen gaji satu karyawan + pratinjau + log (W12)
+      responses:
+        '200':
+          description: Profil gaji
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalaryProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      x-draft: true
+      tags:
+        - Komponen Gaji (F10)
+      summary: Simpan komponen gaji (W57, W56 · US-09 AC-1)
+      description: |
+        Berlaku mulai payroll periode berikutnya yang belum Draft. Setiap perubahan dicatat di log
+        (nilai lama, nilai baru, pengubah, waktu, alasan). Nilai negatif atau bukan angka → 422 (US-09 AC-2).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSalaryProfileRequest'
+      responses:
+        '200':
+          description: Tersimpan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalaryProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /payroll/rules:
+    get:
+      x-draft: true
+      tags:
+        - Komponen Gaji (F10)
+      summary: Aturan komponen global tenant (W58)
+      responses:
+        '200':
+          description: Aturan global
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRules'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+    put:
+      x-draft: true
+      tags:
+        - Komponen Gaji (F10)
+      summary: Simpan aturan global (W58)
+      description: Dicatat di audit log dan berlaku mulai payroll periode berikutnya.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollRules'
+      responses:
+        '200':
+          description: Tersimpan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRules'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
         '422':
           $ref: '#/components/responses/ValidationError'
 
@@ -4502,3 +4643,180 @@ components:
                   type: string
                   format: date-time
                   nullable: true
+
+    # ---------- F10 (DRAF, x-draft: true) ----------
+    MoneyAmount:
+      x-draft: true
+      type: string
+      pattern: '^\d+(\.\d{2})?$'
+      description: Rupiah sebagai string desimal, tidak boleh negatif
+      example: '7000000.00'
+
+    SalaryComponents:
+      x-draft: true
+      type: object
+      required: [base_salary, transport_allowance, overtime_rate, project_bonus, bpjs_health_percent, bpjs_employment_percent, late_deduction, absent_deduction, auto_pph21]
+      properties:
+        base_salary:
+          $ref: '#/components/schemas/MoneyAmount'
+        transport_allowance:
+          $ref: '#/components/schemas/MoneyAmount'
+        overtime_rate:
+          $ref: '#/components/schemas/MoneyAmount'
+        project_bonus:
+          $ref: '#/components/schemas/MoneyAmount'
+        bpjs_health_percent:
+          type: string
+          pattern: '^\d+(\.\d{1,2})?$'
+          example: '1'
+        bpjs_employment_percent:
+          type: string
+          pattern: '^\d+(\.\d{1,2})?$'
+          example: '2'
+        late_deduction:
+          $ref: '#/components/schemas/MoneyAmount'
+        absent_deduction:
+          $ref: '#/components/schemas/MoneyAmount'
+        auto_pph21:
+          type: boolean
+        overrides:
+          type: array
+          description: Komponen yang menimpa aturan global ("Disesuaikan HRD" di W54)
+          items:
+            type: string
+            example: overtime_rate
+
+    SalaryProfileSummary:
+      x-draft: true
+      type: object
+      required: [employee, complete, adjusted]
+      properties:
+        employee:
+          $ref: '#/components/schemas/EmployeeRef'
+        complete:
+          type: boolean
+          description: false bila BPJS atau potongan belum diatur ("Belum lengkap")
+        adjusted:
+          type: boolean
+          description: true bila ada komponen yang menimpa aturan global
+        base_salary:
+          $ref: '#/components/schemas/MoneyAmount'
+        transport_allowance:
+          $ref: '#/components/schemas/MoneyAmount'
+        bpjs_health_percent:
+          type: string
+          nullable: true
+        bpjs_employment_percent:
+          type: string
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    SalaryChangeLog:
+      x-draft: true
+      type: object
+      required: [id, field, changed_by, changed_at]
+      properties:
+        id:
+          type: string
+        field:
+          type: string
+          example: transport_allowance
+        old_value:
+          type: string
+          nullable: true
+          example: '500000.00'
+        new_value:
+          type: string
+          nullable: true
+          example: '750000.00'
+        changed_by:
+          type: string
+          example: Ananda S.
+        changed_at:
+          type: string
+          format: date-time
+        reason:
+          type: string
+          nullable: true
+          example: Kebijakan Q4
+
+    SalaryProfile:
+      x-draft: true
+      allOf:
+        - $ref: '#/components/schemas/SalaryComponents'
+        - type: object
+          required: [employee, effective_period, preview, logs]
+          properties:
+            employee:
+              $ref: '#/components/schemas/EmployeeRef'
+            effective_period:
+              type: string
+              pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+              description: Periode payroll pertama yang memakai nilai ini
+              example: '2026-11'
+            preview:
+              type: object
+              description: Estimasi gaji bersih periode berjalan (W12)
+              required: [gross, deductions, net]
+              properties:
+                gross:
+                  $ref: '#/components/schemas/MoneyAmount'
+                deductions:
+                  $ref: '#/components/schemas/MoneyAmount'
+                net:
+                  $ref: '#/components/schemas/MoneyAmount'
+                pph21:
+                  $ref: '#/components/schemas/MoneyAmount'
+            logs:
+              type: array
+              items:
+                $ref: '#/components/schemas/SalaryChangeLog'
+
+    UpdateSalaryProfileRequest:
+      x-draft: true
+      allOf:
+        - $ref: '#/components/schemas/SalaryComponents'
+        - type: object
+          properties:
+            reason:
+              type: string
+              maxLength: 200
+              description: Alasan perubahan, tampil di log (opsional)
+
+    PayrollRules:
+      x-draft: true
+      type: object
+      required: [overtime_divisor, overtime_after_minutes, overtime_requires_approval, late_deduction, absent_divisor, bpjs_health_percent, bpjs_employment_percent, pph21_method, default_ptkp, auto_pph21]
+      properties:
+        overtime_divisor:
+          type: integer
+          description: Tarif lembur per jam = gaji pokok ÷ divisor (PP 35/2021 → 173)
+          example: 173
+        overtime_after_minutes:
+          type: integer
+          example: 30
+        overtime_requires_approval:
+          type: boolean
+        late_deduction:
+          $ref: '#/components/schemas/MoneyAmount'
+        absent_divisor:
+          type: integer
+          description: Potongan alpha per hari = gaji pokok ÷ divisor
+          example: 22
+        bpjs_health_percent:
+          type: string
+          example: '1'
+        bpjs_employment_percent:
+          type: string
+          example: '2'
+        pph21_method:
+          type: string
+          enum: [ter]
+        default_ptkp:
+          type: string
+          enum: ['TK/0', 'TK/1', 'TK/2', 'TK/3', 'K/0', 'K/1', 'K/2', 'K/3']
+        auto_pph21:
+          type: boolean

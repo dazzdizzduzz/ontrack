@@ -92,3 +92,4 @@ export * from './attendanceHistory';
 export * from './leave';
 export * from './notifications';
 export * from './tasks';
+export * from './payroll';

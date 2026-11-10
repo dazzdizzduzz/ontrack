@@ -1,0 +1,265 @@
+/* W54: tabel komponen gaji. */
+.table th:first-child,
+.table td:first-child {
+  width: 240px;
+}
+
+.adjusted {
+  color: var(--color-text-accent);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.strong {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.missing {
+  color: var(--color-text-secondary);
+}
+
+.missingText {
+  color: var(--color-status-danger-fg);
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.lockNote {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+/* W12: formulir di kiri, pratinjau dan log di kanan. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+  gap: var(--space-16);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-20);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.cardTitle {
+  margin: 0;
+  font: var(--type-heading-h3-font);
+  letter-spacing: var(--type-heading-h3-tracking);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-12) var(--space-16);
+  max-width: 616px;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.previewList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  margin: 0;
+}
+
+.previewRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+}
+
+.previewRow dt {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.previewRow dd {
+  margin: 0;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.deduction {
+  color: var(--color-status-danger-fg);
+}
+
+.net {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-subtle);
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.netValue {
+  font: var(--type-heading-h2-font);
+  letter-spacing: var(--type-heading-h2-tracking);
+}
+
+.previewNote {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.logCard {
+  min-height: 320px;
+}
+
+.log {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.logItem {
+  display: flex;
+  gap: var(--space-12);
+}
+
+.rail {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  width: 20px;
+}
+
+.dotDone,
+.dotCurrent {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+}
+
+.dotDone {
+  background: var(--color-bg-inverse);
+}
+
+.dotCurrent {
+  border: 1.5px solid var(--color-text-primary);
+  background: var(--color-accent-default);
+}
+
+.line {
+  flex: 1;
+  width: 2px;
+  background: var(--color-border-default);
+}
+
+.logText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-20);
+}
+
+.logTitle {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.logMeta {
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+/* W57: daftar perubahan lama → baru. */
+.diff {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--space-4) var(--space-12);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+}
+
+.diffRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-8) 0;
+}
+
+.diffRow dt {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.diffRow dd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.diffRow s {
+  color: var(--color-text-secondary);
+}
+
+.diffRow strong {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+/* W58: empat kartu aturan, dua kolom. */
+.rules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-16);
+}
+
+@media (max-width: 1023px) {
+  .layout,
+  .rules {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .fields {
+    grid-template-columns: 1fr;
+  }
+}

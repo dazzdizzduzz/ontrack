@@ -3375,6 +3375,205 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/payroll/salary-profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daftar profil komponen gaji per karyawan (W54) */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Nomor halaman, mulai dari 1 */
+                    page?: components["parameters"]["PageQuery"];
+                    /** @description Jumlah item per halaman (maks. 100) */
+                    per_page?: components["parameters"]["PerPageQuery"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Profil gaji + ringkasan kelengkapan */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SalaryProfileSummary"][];
+                            summary: {
+                                /** @example 16 */
+                                total: number;
+                                /** @example 14 */
+                                complete: number;
+                                /** @example 2 */
+                                incomplete: number;
+                            };
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/salary-profiles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        /** Komponen gaji satu karyawan + pratinjau + log (W12) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Profil gaji */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SalaryProfile"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+                404: components["responses"]["NotFoundError"];
+            };
+        };
+        /**
+         * Simpan komponen gaji (W57, W56 · US-09 AC-1)
+         * @description Berlaku mulai payroll periode berikutnya yang belum Draft. Setiap perubahan dicatat di log
+         *     (nilai lama, nilai baru, pengubah, waktu, alasan). Nilai negatif atau bukan angka → 422 (US-09 AC-2).
+         *
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["IdPath"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateSalaryProfileRequest"];
+                };
+            };
+            responses: {
+                /** @description Tersimpan */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SalaryProfile"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+                422: components["responses"]["ValidationError"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aturan komponen global tenant (W58) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Aturan global */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PayrollRules"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+            };
+        };
+        /**
+         * Simpan aturan global (W58)
+         * @description Dicatat di audit log dan berlaku mulai payroll periode berikutnya.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PayrollRules"];
+                };
+            };
+            responses: {
+                /** @description Tersimpan */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PayrollRules"];
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+                422: components["responses"]["ValidationError"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/attendance": {
         parameters: {
             query?: never;
@@ -4850,6 +5049,99 @@ export interface components {
                 /** Format: date-time */
                 due_at?: string | null;
             } | null;
+        };
+        /**
+         * @description Rupiah sebagai string desimal, tidak boleh negatif
+         * @example 7000000.00
+         */
+        MoneyAmount: string;
+        SalaryComponents: {
+            base_salary: components["schemas"]["MoneyAmount"];
+            transport_allowance: components["schemas"]["MoneyAmount"];
+            overtime_rate: components["schemas"]["MoneyAmount"];
+            project_bonus: components["schemas"]["MoneyAmount"];
+            /** @example 1 */
+            bpjs_health_percent: string;
+            /** @example 2 */
+            bpjs_employment_percent: string;
+            late_deduction: components["schemas"]["MoneyAmount"];
+            absent_deduction: components["schemas"]["MoneyAmount"];
+            auto_pph21: boolean;
+            /** @description Komponen yang menimpa aturan global ("Disesuaikan HRD" di W54) */
+            overrides?: string[];
+        };
+        SalaryProfileSummary: {
+            employee: components["schemas"]["EmployeeRef"];
+            /** @description false bila BPJS atau potongan belum diatur ("Belum lengkap") */
+            complete: boolean;
+            /** @description true bila ada komponen yang menimpa aturan global */
+            adjusted: boolean;
+            base_salary?: components["schemas"]["MoneyAmount"];
+            transport_allowance?: components["schemas"]["MoneyAmount"];
+            bpjs_health_percent?: string | null;
+            bpjs_employment_percent?: string | null;
+            /** Format: date-time */
+            updated_at?: string | null;
+        };
+        SalaryChangeLog: {
+            id: string;
+            /** @example transport_allowance */
+            field: string;
+            /** @example 500000.00 */
+            old_value?: string | null;
+            /** @example 750000.00 */
+            new_value?: string | null;
+            /** @example Ananda S. */
+            changed_by: string;
+            /** Format: date-time */
+            changed_at: string;
+            /** @example Kebijakan Q4 */
+            reason?: string | null;
+        };
+        SalaryProfile: components["schemas"]["SalaryComponents"] & {
+            employee: components["schemas"]["EmployeeRef"];
+            /**
+             * @description Periode payroll pertama yang memakai nilai ini
+             * @example 2026-11
+             */
+            effective_period: string;
+            /** @description Estimasi gaji bersih periode berjalan (W12) */
+            preview: {
+                gross: components["schemas"]["MoneyAmount"];
+                deductions: components["schemas"]["MoneyAmount"];
+                net: components["schemas"]["MoneyAmount"];
+                pph21?: components["schemas"]["MoneyAmount"];
+            };
+            logs: components["schemas"]["SalaryChangeLog"][];
+        };
+        UpdateSalaryProfileRequest: components["schemas"]["SalaryComponents"] & {
+            /** @description Alasan perubahan, tampil di log (opsional) */
+            reason?: string;
+        };
+        PayrollRules: {
+            /**
+             * @description Tarif lembur per jam = gaji pokok ÷ divisor (PP 35/2021 → 173)
+             * @example 173
+             */
+            overtime_divisor: number;
+            /** @example 30 */
+            overtime_after_minutes: number;
+            overtime_requires_approval: boolean;
+            late_deduction: components["schemas"]["MoneyAmount"];
+            /**
+             * @description Potongan alpha per hari = gaji pokok ÷ divisor
+             * @example 22
+             */
+            absent_divisor: number;
+            /** @example 1 */
+            bpjs_health_percent: string;
+            /** @example 2 */
+            bpjs_employment_percent: string;
+            /** @enum {string} */
+            pph21_method: "ter";
+            /** @enum {string} */
+            default_ptkp: "TK/0" | "TK/1" | "TK/2" | "TK/3" | "K/0" | "K/1" | "K/2" | "K/3";
+            auto_pph21: boolean;
         };
     };
     responses: {
