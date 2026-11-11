@@ -1,0 +1,470 @@
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-12);
+}
+
+/* Stepper status (W59, W07, W14, W65). */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  margin: 0;
+  padding: var(--space-16) var(--space-20);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.step:last-child {
+  flex: none;
+}
+
+.stepNum {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--color-border-control);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  font: var(--type-label-s-font);
+  letter-spacing: var(--type-label-s-tracking);
+}
+
+.current {
+  border-color: var(--color-text-primary);
+  background: var(--color-accent-default);
+  color: var(--color-text-on-accent);
+}
+
+.done {
+  border-color: var(--color-bg-inverse);
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+}
+
+.stepText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.stepTitle {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.stepMeta {
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.muted {
+  color: var(--color-text-secondary);
+}
+
+.stepLine {
+  flex: 1;
+  height: 1px;
+  min-width: var(--space-16);
+  background: var(--color-border-strong);
+}
+
+/* W59: cek kesiapan. */
+.readiness {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-24);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.readinessTitle {
+  margin: 0;
+  font: var(--type-heading-h3-font);
+  letter-spacing: var(--type-heading-h3-tracking);
+}
+
+.readinessLead {
+  margin: 0 0 var(--space-8);
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.checks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-16) 0;
+  border-top: 1px solid var(--color-border-default);
+}
+
+.checkOk,
+.checkWarn {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+}
+
+.checkOk {
+  background: var(--color-accent-subtle);
+}
+
+.checkWarn {
+  background: var(--color-status-warning-bg);
+}
+
+.checkText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.checkTitle {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.checkDetail {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+/* W07: KPI dan tabel. */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-16);
+}
+
+.table th:first-child,
+.table td:first-child {
+  width: 240px;
+}
+
+.adjusted {
+  color: var(--color-text-accent);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.minus {
+  color: var(--color-status-danger-fg);
+}
+
+.strong {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.lockNote {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+/* W60: kartu progres di atas latar redup. */
+.progressBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16);
+  background: var(--color-bg-scrim);
+}
+
+.progressCard {
+  display: flex;
+  width: min(480px, 100%);
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-24);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-dialog);
+}
+
+.progressTitle {
+  margin: 0;
+  font: var(--type-heading-h3-font);
+  letter-spacing: var(--type-heading-h3-tracking);
+}
+
+.progressMeta {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.progressTrack {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-subtle);
+}
+
+.progressFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-default);
+  transition: width 300ms ease;
+}
+
+.progressSteps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  margin: var(--space-8) 0 0;
+  padding: 0;
+  list-style: none;
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.progressSteps li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.progressSteps li::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-border-default);
+}
+
+.stepDone::before {
+  background: var(--color-accent-default) !important;
+}
+
+.stepNow::before {
+  background: var(--color-bg-inverse) !important;
+}
+
+.stepTodo {
+  color: var(--color-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressFill {
+    transition: none;
+  }
+}
+
+/* Dialog ringkasan (W63, W64). */
+.summary {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--space-4) var(--space-12);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-8) 0;
+}
+
+.summaryRow dt {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.summaryRow dd {
+  margin: 0;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+  text-align: right;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: var(--space-12);
+}
+
+/* W62: audit log. */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timelineItem {
+  display: flex;
+  gap: var(--space-12);
+}
+
+.rail {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  width: 20px;
+}
+
+.dotDone,
+.dotCurrent {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+}
+
+.dotDone {
+  background: var(--color-bg-inverse);
+}
+
+.dotCurrent {
+  border: 1.5px solid var(--color-text-primary);
+  background: var(--color-accent-default);
+}
+
+.line {
+  flex: 1;
+  width: 2px;
+  background: var(--color-border-default);
+}
+
+.timelineText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-20);
+}
+
+.timelineTitle {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.timelineMeta {
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+/* W100: rincian gaji. */
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.blockTitle {
+  margin: 0;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--space-8) var(--space-16);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-subtle);
+}
+
+.cardRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-8) 0;
+}
+
+.cardRow dt {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.cardRow dd {
+  margin: 0;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.total dt {
+  color: var(--color-text-primary);
+  font: var(--type-label-m-font);
+}
+
+.netCard {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-16);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-subtle);
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+@media (max-width: 1023px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stepper {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}

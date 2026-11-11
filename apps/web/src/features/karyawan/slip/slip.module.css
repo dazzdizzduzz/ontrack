@@ -1,0 +1,374 @@
+.main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-24);
+  padding: var(--space-32);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+}
+
+.titleBlock {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title,
+.subtitle {
+  margin: 0;
+}
+
+.title {
+  font: var(--type-heading-h1-font);
+  letter-spacing: var(--type-heading-h1-tracking);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+/* KW23: daftar periode 320 px di kiri, rincian mengisi sisanya. */
+.columns {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-24);
+}
+
+.card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-20);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.periods {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-12);
+  list-style: none;
+}
+
+.period {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.period:hover {
+  background: var(--color-bg-hover);
+}
+
+.period[aria-current='true'] {
+  background: var(--color-bg-canvas);
+}
+
+.period:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+.periodText {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.periodName {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.periodMeta {
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.listCard {
+  gap: 0;
+  padding: 0;
+}
+
+/* Kartu hitam gaji bersih (M09, KW23). */
+.netCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-20);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+}
+
+.netTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.netStatus {
+  font: var(--type-label-s-font);
+  letter-spacing: var(--type-label-s-tracking);
+  text-transform: uppercase;
+}
+
+.netValue {
+  margin: 0;
+  font: var(--type-numeric-kpi-font);
+  letter-spacing: var(--type-numeric-kpi-tracking);
+}
+
+.netMeta {
+  margin: 0;
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.tables {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-16);
+}
+
+.table {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.tableTitle {
+  margin: 0;
+  padding: var(--space-16);
+  border-bottom: 1px solid var(--color-border-default);
+  color: var(--color-text-secondary);
+  font: var(--type-label-s-font);
+  letter-spacing: var(--type-label-s-tracking);
+  text-transform: uppercase;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-8) var(--space-16);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.row:nth-of-type(1) {
+  padding-top: var(--space-12);
+}
+
+.row dt {
+  color: var(--color-text-secondary);
+}
+
+.row dd {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.total {
+  margin-top: var(--space-4);
+  padding: var(--space-12) var(--space-16);
+  border-top: 1px solid var(--color-border-default);
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.total dt {
+  color: var(--color-text-primary);
+}
+
+.minus {
+  color: var(--color-status-danger-fg);
+}
+
+.lockNote {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+/* M48/KW23: slip periode berjalan belum terbit. */
+.pending {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-48) var(--space-24);
+  text-align: center;
+}
+
+.pendingIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-subtle);
+}
+
+.pendingTitle {
+  margin: 0;
+  font: var(--type-heading-h3-font);
+  letter-spacing: var(--type-heading-h3-tracking);
+}
+
+.pendingText {
+  max-width: 360px;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+/* KW24/M47: pratinjau kertas slip PDF. */
+.paperWrap {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-16) var(--space-24);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-canvas);
+}
+
+.paper {
+  display: flex;
+  width: 100%;
+  max-width: 400px;
+  min-height: 560px;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-24);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-menu);
+  color: var(--color-text-primary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.paperBrand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.paperDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-default);
+}
+
+.paperTitle {
+  margin: var(--space-4) 0 0;
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+  text-transform: uppercase;
+}
+
+.paperMeta {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-secondary);
+}
+
+.paperRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  margin: 0;
+}
+
+.paperRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+}
+
+.paperRow dt {
+  color: var(--color-text-secondary);
+}
+
+.paperRow dd {
+  margin: 0;
+}
+
+.paperNet {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+  margin-top: var(--space-4);
+  padding-top: var(--space-12);
+  border-top: 1px solid var(--color-border-default);
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+.paperFoot {
+  margin: auto 0 0;
+  padding-top: var(--space-24);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 1023px) {
+  .columns,
+  .tables {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .main {
+    padding: var(--space-16);
+  }
+
+  .header {
+    flex-wrap: wrap;
+  }
+}

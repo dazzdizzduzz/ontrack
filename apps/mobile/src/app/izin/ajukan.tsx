@@ -2,10 +2,10 @@ import { useLocalSearchParams } from 'expo-router';
 
 import { LeaveFormScreen, type LeaveFormPreview } from '@/features/leave/LeaveFormScreen';
 
-const previews: LeaveFormPreview[] = ['contoh', 'jenis', 'sakit', 'validasi', 'kuota'];
+const previews: LeaveFormPreview[] = ['contoh', 'jenis', 'tanggal', 'sakit', 'validasi', 'kuota'];
 
 /**
- * M05 (kosong). Contoh Figma lewat `?state=`: `contoh` (M05), `jenis` (M38), `sakit` (M39),
+ * M05 (kosong). Contoh Figma lewat `?state=`: `contoh` (M05), `jenis` (M38), `tanggal` (M58), `sakit` (M39),
  * `validasi` (M40), `kuota` (M18).
  */
 export default function LeaveFormRoute() {

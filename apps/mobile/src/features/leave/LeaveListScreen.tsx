@@ -1,15 +1,17 @@
-import type { LeaveStatus } from '@on-track/core';
+import { sampleLeaveDetails, type LeaveRequest, type LeaveStatus } from '@on-track/core';
 import { color, radius, space } from '@on-track/tokens';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { Alert } from '@/components/ui/Alert';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { Button } from '@/components/ui/Button';
 import { mainTabs } from '@/components/ui/mainTabs';
 import { TopAppBar } from '@/components/ui/TopAppBar';
 import { textStyle } from '@/theme/text';
 import { LeaveCard, QuotaCard } from './LeaveParts';
+import { LeaveMenuSheet } from './LeaveMenuSheet';
 import { useLeave } from './LeaveProvider';
 
 const filters: { label: string; value: LeaveStatus | null }[] = [
@@ -19,16 +21,38 @@ const filters: { label: string; value: LeaveStatus | null }[] = [
   { label: 'Ditolak', value: 'ditolak' },
 ];
 
-/** M16 · Izin Saya: kuota cuti, filter status, dan daftar pengajuan. */
+/** Pengajuan cuti contoh M59 (06–08/10, menunggu) untuk pratinjau `?state=menu`. */
+const previewPending = sampleLeaveDetails.menunggu;
+
+/**
+ * M16 · Izin Saya: kuota cuti, filter status, dan daftar pengajuan. Ketuk kartu membuka M59 (menu
+ * pengajuan). Pratinjau `?state=menu` menampilkan M59 untuk cuti yang masih menunggu.
+ */
 export function LeaveListScreen() {
-  const { requests, quota } = useLeave();
+  const { state } = useLocalSearchParams<{ state?: string }>();
+  const { requests, quota, cancel } = useLeave();
   const [filter, setFilter] = useState<LeaveStatus | null>(null);
-  const visible = requests.filter((request) => !filter || request.status === filter);
+  // Parameter rute bisa baru terbaca setelah render pertama, jadi pratinjau dihitung, bukan nilai awal state.
+  const [menuId, setMenuId] = useState<string | null | 'auto'>('auto');
+  const [previewGone, setPreviewGone] = useState(false);
+  const [cancelled, setCancelled] = useState<LeaveRequest | null>(null);
+  const withPreview =
+    state === 'menu' && !previewGone && !requests.some((item) => item.status === 'menunggu')
+      ? [previewPending, ...requests]
+      : requests;
+  const visible = withPreview.filter((request) => !filter || request.status === filter);
+  const openId = menuId === 'auto' ? (state === 'menu' ? previewPending.id : null) : menuId;
+  const menuRequest = withPreview.find((item) => item.id === openId) ?? null;
 
   return (
     <View style={styles.screen}>
       <TopAppBar title="Izin & Cuti" />
       <ScrollView contentContainerStyle={styles.content}>
+        {cancelled && (
+          <Alert tone="success" title="Pengajuan dibatalkan" announce>
+            {`Pengajuan ${cancelled.type === 'cuti' ? 'cuti' : 'kamu'} sudah dibatalkan dan atasan tidak perlu menyetujui lagi.`}
+          </Alert>
+        )}
         <QuotaCard quota={quota} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           {filters.map((item) => {
@@ -51,7 +75,7 @@ export function LeaveListScreen() {
           <LeaveCard
             key={request.id}
             request={request}
-            onPress={() => router.push({ pathname: '/izin/[id]', params: { id: request.id } })}
+            onPress={() => setMenuId(request.id)}
           />
         ))}
         {visible.length === 0 && <Text style={styles.empty}>Belum ada pengajuan dengan status ini.</Text>}
@@ -60,6 +84,20 @@ export function LeaveListScreen() {
         <Button fullWidth label="Ajukan izin baru" icon="plus-inverse" onPress={() => router.push('/izin/ajukan')} />
       </View>
       <BottomNav items={mainTabs} active="Izin" />
+      <LeaveMenuSheet
+        request={menuRequest}
+        onClose={() => setMenuId(null)}
+        onDetail={(request) => {
+          setMenuId(null);
+          router.push({ pathname: '/izin/[id]', params: { id: request.id } });
+        }}
+        onCancel={(request) => {
+          setMenuId(null);
+          if (request.id === previewPending.id) setPreviewGone(true);
+          else cancel(request.id);
+          setCancelled(request);
+        }}
+      />
     </View>
   );
 }

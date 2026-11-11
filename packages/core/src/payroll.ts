@@ -103,7 +103,7 @@ export type PreviewPeriod = {
 export type SalaryPreview = { gross: string; deductions: string; net: string };
 
 /**
- * Pratinjau gaji bersih (W12). BPJS dihitung dari gaji pokok + tunjangan tetap (W58). Hasil akhir
+ * Pratinjau gaji bersih (W12). BPJS dihitung dari gaji pokok saja (W58). Hasil akhir
  * tetap dihitung server saat payroll diproses (F11).
  */
 export function salaryPreview(components: SalaryComponents, period: PreviewPeriod): SalaryPreview {
@@ -112,7 +112,7 @@ export function salaryPreview(components: SalaryComponents, period: PreviewPerio
   const overtime = roundRupiah(toCents(components.overtimeRate) * period.overtimeHours);
   const gross = base + transport + toCents(components.projectBonus) + overtime;
   const bpjsPercent = Number(components.bpjsHealthPercent) + Number(components.bpjsEmploymentPercent);
-  const bpjs = roundRupiah(((base + transport) * bpjsPercent) / 100);
+  const bpjs = roundRupiah((base * bpjsPercent) / 100);
   const deductions =
     bpjs +
     toCents(components.lateDeduction) * period.lateCount +
@@ -194,12 +194,12 @@ export const ptkpOptions = ['TK/0', 'TK/1', 'TK/2', 'TK/3', 'K/0', 'K/1', 'K/2',
 /** Profil yang tidak tampil di tabel contoh: 16 karyawan, 14 lengkap (W54). */
 export const SALARY_PROFILES_NOT_LISTED = 11;
 
-/** Periode berjalan Dhais: 3 jam lembur, 1 kali terlambat, PPh 21 estimasi Rp 230.000. */
+/** Periode berjalan Dhais: 3 jam lembur, 1 kali terlambat, PPh 21 estimasi Rp 245.000. */
 export const samplePreviewPeriod: PreviewPeriod = {
   overtimeHours: 3,
   lateCount: 1,
   absentCount: 0,
-  pph21Estimate: '230000.00',
+  pph21Estimate: '245000.00',
 };
 
 /** Payroll Oktober sudah Draft, jadi perubahan berlaku mulai November (W57). */
@@ -236,8 +236,8 @@ export const sampleSalaryProfiles: SalaryProfile[] = [
       { id: 'l1', title: 'Profil gaji dibuat', by: 'HRD', at: '01/03/2026' },
     ],
   },
-  { id: 'komang', name: 'I Komang Agus S.', initials: 'IK', position: 'Team Lead', division: 'Design', adjusted: false, components: { ...dhaisComponents, baseSalary: '6500000.00', transportAllowance: '750000.00', overtimeRate: '37572.25', projectBonus: '0.00', absentDeduction: '295454.55' }, base: '6500000.00', transport: '750000.00', updatedAt: '12/09/2026', logs: [{ id: 'k1', title: 'Profil gaji dibuat', by: 'HRD', at: '12/09/2026' }] },
-  { id: 'khamdafa', name: 'Khamdafa W.', initials: 'KW', position: 'Graphic Designer', division: 'Design', adjusted: false, components: { ...dhaisComponents, baseSalary: '5500000.00', overtimeRate: '31791.91', projectBonus: '0.00', absentDeduction: '250000.00' }, base: '5500000.00', transport: '500000.00', updatedAt: '02/09/2026', logs: [{ id: 'w1', title: 'Profil gaji dibuat', by: 'HRD', at: '02/09/2026' }] },
+  { id: 'komang', name: 'I Komang Agus S.', initials: 'IK', position: 'Team Lead', division: 'Developer', adjusted: false, components: { ...dhaisComponents, baseSalary: '8500000.00', transportAllowance: '750000.00', overtimeRate: '49132.95', projectBonus: '0.00', absentDeduction: '386363.64' }, base: '8500000.00', transport: '750000.00', updatedAt: '12/09/2026', logs: [{ id: 'k1', title: 'Profil gaji dibuat', by: 'HRD', at: '12/09/2026' }] },
+  { id: 'khamdafa', name: 'Khamdafa W.', initials: 'KW', position: 'Graphic Designer', division: 'Design', adjusted: false, components: { ...dhaisComponents, baseSalary: '6500000.00', overtimeRate: '37572.25', projectBonus: '0.00', absentDeduction: '295454.55' }, base: '6500000.00', transport: '500000.00', updatedAt: '02/09/2026', logs: [{ id: 'w1', title: 'Profil gaji dibuat', by: 'HRD', at: '02/09/2026' }] },
   { id: 'made', name: 'Made Nandana P.', initials: 'MN', position: 'Developer', division: 'Developer', adjusted: true, components: null, base: '7500000.00', transport: '500000.00', logs: [] },
   { id: 'putu', name: 'I Putu Ari D.', initials: 'AR', position: 'Developer', division: 'Developer', adjusted: false, components: null, base: '6500000.00', transport: '500000.00', logs: [] },
 ];
@@ -294,3 +294,200 @@ export function formulaValue(field: SalaryField, baseSalary: string, rules: Payr
 export function differsFromFormula(value: string, formula: string): boolean {
   return roundRupiah(toCents(value)) !== roundRupiah(toCents(formula));
 }
+
+// =============================================================================================
+// F11 · Generate payroll, penyesuaian manual, dan approval CEO (FR-23–FR-25, US-10).
+
+export type PayrollStatus = 'belum' | 'draft' | 'diajukan' | 'disetujui';
+
+/** Komponen yang boleh disesuaikan manual di W13. */
+export type AdjustableComponent = 'overtime' | 'projectBonus' | 'transportAllowance' | 'lateDeduction';
+
+export const adjustableComponents: { key: AdjustableComponent; label: string; source: string }[] = [
+  { key: 'overtime', label: 'Lembur', source: 'Otomatis dari absensi' },
+  { key: 'projectBonus', label: 'Bonus proyek', source: 'Dari komponen gaji' },
+  { key: 'transportAllowance', label: 'Tunjangan transport', source: 'Dari komponen gaji' },
+  { key: 'lateDeduction', label: 'Potongan terlambat', source: 'Otomatis dari absensi' },
+];
+
+export type PayrollAdjustment = {
+  id: string;
+  employeeId: string;
+  component: AdjustableComponent;
+  before: string;
+  after: string;
+  reason: string;
+  by: string;
+  /** "01/11 10:24" */
+  at: string;
+};
+
+export type PayrollItem = { key: string; label: string; amount: string; kind: 'earning' | 'deduction' };
+
+export type PayrollLine = {
+  employeeId: string;
+  name: string;
+  initials: string;
+  position: string;
+  division: string;
+  adjusted: boolean;
+  base: string;
+  /** Kolom "Tunjangan" W07 = tunjangan transport + bonus proyek. */
+  allowance: string;
+  overtime: string;
+  deductions: string;
+  net: string;
+  gross: string;
+  items: PayrollItem[];
+};
+
+/** Periode berjalan per karyawan, dari kehadiran dan perhitungan PPh 21 server. */
+export type EmployeePeriod = PreviewPeriod;
+
+const sumCents = (values: string[]) => values.reduce((total, value) => total + toCents(value), 0);
+
+/** Nilai otomatis satu komponen sebelum penyesuaian (W13 "Nilai sebelum"). */
+export function automaticAmount(
+  component: AdjustableComponent,
+  components: SalaryComponents,
+  period: EmployeePeriod,
+): string {
+  if (component === 'overtime') return fromCents(roundRupiah(toCents(components.overtimeRate) * period.overtimeHours));
+  if (component === 'lateDeduction') return fromCents(toCents(components.lateDeduction) * period.lateCount);
+  return components[component];
+}
+
+/**
+ * Satu baris payroll (W07) dan rinciannya (W100). Rumus sama dengan pratinjau F10; penyesuaian
+ * manual menggantikan nilai otomatis komponennya.
+ */
+export function computePayrollLine(
+  profile: SalaryProfile,
+  components: SalaryComponents,
+  period: EmployeePeriod,
+  adjustments: PayrollAdjustment[],
+): PayrollLine {
+  const own = adjustments.filter((item) => item.employeeId === profile.id);
+  const amount = (component: AdjustableComponent) =>
+    own.filter((item) => item.component === component).at(-1)?.after ?? automaticAmount(component, components, period);
+
+  const transport = amount('transportAllowance');
+  const bonus = amount('projectBonus');
+  const overtime = amount('overtime');
+  const late = amount('lateDeduction');
+  // W58: dasar BPJS = gaji pokok saja (keputusan akhir menunggu backend).
+  const bpjsBase = toCents(components.baseSalary);
+  const health = fromCents(roundRupiah((bpjsBase * Number(components.bpjsHealthPercent)) / 100));
+  const employment = fromCents(roundRupiah((bpjsBase * Number(components.bpjsEmploymentPercent)) / 100));
+  const absent = fromCents(toCents(components.absentDeduction) * period.absentCount);
+  const pph = components.autoPph21 ? period.pph21Estimate : '0.00';
+
+  const items: PayrollItem[] = [
+    { key: 'base', label: 'Gaji pokok', amount: components.baseSalary, kind: 'earning' },
+    { key: 'transport', label: 'Tunjangan transport', amount: transport, kind: 'earning' },
+    {
+      key: 'overtime',
+      label: period.overtimeHours ? `Lembur · ${period.overtimeHours} jam × ${formatMoneyPlain(components.overtimeRate)}` : 'Lembur',
+      amount: overtime,
+      kind: 'earning',
+    },
+    { key: 'bonus', label: 'Bonus proyek', amount: bonus, kind: 'earning' },
+    { key: 'health', label: `BPJS Kesehatan ${components.bpjsHealthPercent}%`, amount: health, kind: 'deduction' },
+    { key: 'employment', label: `BPJS Ketenagakerjaan ${components.bpjsEmploymentPercent}%`, amount: employment, kind: 'deduction' },
+    { key: 'pph', label: 'PPh 21 (TER)', amount: pph, kind: 'deduction' },
+    { key: 'late', label: `Terlambat · ${period.lateCount} kali`, amount: late, kind: 'deduction' },
+    { key: 'absent', label: `Alpha · ${period.absentCount} hari`, amount: absent, kind: 'deduction' },
+  ].filter((item) => item.kind === 'earning' || toCents(item.amount) > 0) as PayrollItem[];
+
+  const gross = sumCents(items.filter((item) => item.kind === 'earning').map((item) => item.amount));
+  const deductions = sumCents(items.filter((item) => item.kind === 'deduction').map((item) => item.amount));
+  return {
+    employeeId: profile.id,
+    name: profile.name,
+    initials: profile.initials,
+    position: profile.position,
+    division: profile.division,
+    adjusted: own.length > 0,
+    base: components.baseSalary,
+    allowance: fromCents(toCents(transport) + toCents(bonus)),
+    overtime,
+    deductions: fromCents(deductions),
+    gross: fromCents(gross),
+    net: fromCents(gross - deductions),
+    items,
+  };
+}
+
+export type PayrollTotals = {
+  employees: number;
+  net: string;
+  deductions: string;
+  overtimeHours: number;
+  overtimePay: string;
+  adjustments: number;
+};
+
+/** Total KPI W07: baris yang tampil + ringkasan karyawan lain dari server. */
+export function payrollTotals(
+  lines: PayrollLine[],
+  periods: Record<string, EmployeePeriod>,
+  adjustments: PayrollAdjustment[],
+  others: Omit<PayrollTotals, 'adjustments'>,
+): PayrollTotals {
+  return {
+    employees: lines.length + others.employees,
+    net: fromCents(sumCents(lines.map((line) => line.net)) + toCents(others.net)),
+    deductions: fromCents(sumCents(lines.map((line) => line.deductions)) + toCents(others.deductions)),
+    overtimeHours: lines.reduce((total, line) => total + (periods[line.employeeId]?.overtimeHours ?? 0), others.overtimeHours),
+    overtimePay: fromCents(sumCents(lines.map((line) => line.overtime)) + toCents(others.overtimePay)),
+    adjustments: adjustments.length,
+  };
+}
+
+/** "Rp 118,4 jt" untuk kartu KPI. */
+export const formatRupiahShort = (value: string) => `Rp ${formatMoneyShort(value)}`;
+
+/** Batas alasan penyesuaian (W13 "78/200") dan catatan CEO (W66 "68/200"). */
+export const PAYROLL_NOTE_MAX = 200;
+
+// MOCK F11: data periode Oktober 2026 per karyawan dan ringkasan 11 karyawan lain.
+export const samplePayrollPeriods: Record<string, EmployeePeriod> = {
+  daze: { overtimeHours: 3, lateCount: 1, absentCount: 0, pph21Estimate: '245000.00' },
+  komang: { overtimeHours: 0, lateCount: 0, absentCount: 0, pph21Estimate: '355000.00' },
+  khamdafa: { overtimeHours: 0, lateCount: 1, absentCount: 0, pph21Estimate: '210000.00' },
+  made: { overtimeHours: 8, lateCount: 0, absentCount: 0, pph21Estimate: '315000.00' },
+  putu: { overtimeHours: 0, lateCount: 2, absentCount: 0, pph21Estimate: '300000.00' },
+};
+
+export const samplePayrollOthers: Omit<PayrollTotals, 'adjustments'> = {
+  employees: 11,
+  // Dipilih agar total sama dengan Figma W07: Rp 118,4 jt dan Rp 7,4 jt.
+  net: '81055000.00',
+  deductions: '4695000.00',
+  overtimeHours: 15,
+  overtimePay: '2200000.00',
+};
+
+/** Penyesuaian contoh W13 / W62: lembur Made yang belum tercatat karena GPS gagal. */
+export const samplePayrollAdjustments: PayrollAdjustment[] = [
+  {
+    id: 'adj-made',
+    employeeId: 'made',
+    component: 'overtime',
+    before: '346821.00',
+    after: '450000.00',
+    reason: 'Lembur 26/09 belum tercatat karena GPS gagal; disetujui Team Lead via chat.',
+    by: 'Sri Rahayu (HRD)',
+    at: '01/11 10:24',
+  },
+];
+
+/** Catatan contoh W66 / W103. */
+export const sampleReturnNote = 'Lembur Made Nandana 450.000 belum ada persetujuan atasan, mohon dicek ulang.';
+
+/** Kesiapan data W59 yang tidak berasal dari profil gaji (MOCK: dari rekap F05, izin F06, lembur F04). */
+export const samplePayrollReadiness = {
+  attendance: { complete: 16, total: 16, until: '31/10' },
+  leaveSynced: 5,
+  overtimePending: 3,
+};

@@ -24,8 +24,8 @@ export const portals = {
       title: 'Masuk ke dashboard',
       subtitle: 'Untuk HRD, CEO/Owner, dan Team Lead.',
       note: 'Belum punya akun perusahaan? Daftarkan tenant (segera hadir).',
-      /** Dashboard admin dikerjakan di F13; sementara login demo membuka Data Karyawan (F01). */
-      demoHome: '/data-karyawan',
+      /** W69: halaman pertama setelah login admin. */
+      demoHome: '/dashboard',
     },
     forgotNote: 'Tidak punya akses ke email kantor? Hubungi HRD atau Owner tenant.',
     changed: {

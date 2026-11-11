@@ -93,3 +93,5 @@ export * from './leave';
 export * from './notifications';
 export * from './tasks';
 export * from './payroll';
+export * from './payslip';
+export * from './dashboard';

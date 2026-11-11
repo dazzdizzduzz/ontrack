@@ -31,6 +31,8 @@ type TaskValue = {
   /** F09: Team Lead minta revisi → In Progress. */
   requestRevision: (id: string, note: string, byId: string) => void;
   addComment: (id: string, authorId: string, text: string) => void;
+  /** F13 (W102): alihkan task ke anggota lain; penanggung jawab baru menerima notifikasi. */
+  reassign: (id: string, assigneeId: string) => void;
 };
 
 const TaskContext = createContext<TaskValue | null>(null);
@@ -38,7 +40,7 @@ const TaskContext = createContext<TaskValue | null>(null);
 /**
  * MOCK: task dan proyek tersimpan di memori selama berpindah antara Task Board dan Proyek.
  * Saat integrasi: GET/POST /tasks, /projects, GET /clients (draf F08), serta status, kiriman,
- * persetujuan, revisi, dan komentar task (draf F09).
+ * persetujuan, revisi, dan komentar task (draf F09), serta alihkan task (draf F13).
  */
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(sampleTasks);
@@ -101,6 +103,11 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     [patch],
   );
 
+  const reassign = useCallback<TaskValue['reassign']>(
+    (id, assigneeId) => patch(id, (task) => ({ ...task, assigneeId })),
+    [patch],
+  );
+
   const value = useMemo(
     () => ({
       tasks,
@@ -114,8 +121,9 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       approve,
       requestRevision,
       addComment,
+      reassign,
     }),
-    [addComment, addProject, addTask, approve, projects, requestRevision, setStatus, submit, tasks],
+    [addComment, addProject, addTask, approve, projects, reassign, requestRevision, setStatus, submit, tasks],
   );
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

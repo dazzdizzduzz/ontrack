@@ -1,8 +1,8 @@
 import { AppSidebar, type SidebarItem } from '@/components/layout/AppSidebar';
 
-// Ikon aktif baru ada untuk menu yang halamannya sudah dibuat (Kehadiran, Task, Izin & Cuti, Payroll, Karyawan).
+// Semua menu sudah punya halaman (Dashboard F13).
 const items: SidebarItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: 'nav-grid' },
+  { href: '/dashboard', label: 'Dashboard', icon: 'nav-grid', activeIcon: 'nav-grid-active' },
   { href: '/kehadiran', label: 'Kehadiran', icon: 'nav-clock', activeIcon: 'nav-clock-active' },
   { href: '/task', label: 'Task', icon: 'nav-task', activeIcon: 'nav-task-active' },
   { href: '/izin', label: 'Izin & Cuti', icon: 'nav-calendar', activeIcon: 'nav-calendar-active' },

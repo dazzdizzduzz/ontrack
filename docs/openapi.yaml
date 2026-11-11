@@ -59,6 +59,12 @@ tags:
     description: DRAF - task saya, ubah status, kirim hasil ke Review, setujui atau minta revisi, komentar
   - name: Komponen Gaji (F10)
     description: DRAF - komponen gaji per karyawan, log perubahan, dan aturan global payroll
+  - name: Payroll (F11)
+    description: DRAF - generate payroll, penyesuaian manual, audit log, dan approval CEO
+  - name: Slip Gaji & Akses (F12)
+    description: DRAF - slip gaji milik sendiri (PDF), distribusi slip, dan log akses payroll (403 tercatat)
+  - name: Dashboard & Beban Kerja (F13)
+    description: DRAF - ringkasan dashboard (RBAC per peran), kehadiran live, belum absen, laporan beban kerja, dan alihkan task
 
 
 paths:
@@ -67,6 +73,7 @@ paths:
   # ==========================================
   /auth/login:
     post:
+      operationId: login
       tags:
         - Auth
       summary: Masuk ke sistem (Login)
@@ -108,6 +115,7 @@ paths:
 
   /auth/refresh:
     post:
+      operationId: refreshToken
       tags:
         - Auth
       summary: Refresh Access Token
@@ -140,6 +148,7 @@ paths:
 
   /auth/logout:
     post:
+      operationId: logout
       tags:
         - Auth
       summary: Keluar dari sistem (Logout)
@@ -160,6 +169,7 @@ paths:
 
   /me:
     get:
+      operationId: getMe
       tags:
         - Auth
       summary: Dapatkan profil pengguna saat ini
@@ -176,6 +186,7 @@ paths:
 
   /auth/password/forgot:
     post:
+      operationId: requestPasswordReset
       tags:
         - Auth
       summary: Kirim email tautan reset kata sandi (W19, KW03, M10)
@@ -199,6 +210,7 @@ paths:
 
   /auth/password/reset:
     post:
+      operationId: resetPassword
       tags:
         - Auth
       summary: Buat kata sandi baru dari tautan email (W21, KW05, M11)
@@ -226,6 +238,7 @@ paths:
 
   /roles/permissions:
     get:
+      operationId: getRolePermissions
       tags:
         - Peran & Hak Akses (F01)
       summary: Matriks peran × fitur tenant (W18)
@@ -242,6 +255,7 @@ paths:
         '403':
           $ref: '#/components/responses/ForbiddenError'
     put:
+      operationId: setRolePermissions
       tags:
         - Peran & Hak Akses (F01)
       summary: Simpan matriks hak akses (W18, W73, W74)
@@ -273,6 +287,7 @@ paths:
   # ==========================================
   /departments:
     get:
+      operationId: listDepartments
       tags:
         - Struktur Organisasi - Departments
       summary: Daftar Departemen / Divisi
@@ -316,6 +331,7 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
 
     post:
+      operationId: createDepartment
       tags:
         - Struktur Organisasi - Departments
       summary: Buat Departemen Baru
@@ -355,6 +371,7 @@ paths:
         schema:
           type: string
     get:
+      operationId: getDepartment
       tags:
         - Struktur Organisasi - Departments
       summary: Detail Departemen
@@ -372,6 +389,7 @@ paths:
           $ref: '#/components/responses/NotFoundError'
 
     patch:
+      operationId: updateDepartment
       tags:
         - Struktur Organisasi - Departments
       summary: Perbarui Departemen
@@ -399,6 +417,7 @@ paths:
           $ref: '#/components/responses/ValidationError'
 
     delete:
+      operationId: deleteDepartment
       tags:
         - Struktur Organisasi - Departments
       summary: Hapus Departemen
@@ -432,6 +451,7 @@ paths:
   # ==========================================
   /positions:
     get:
+      operationId: listPositions
       tags:
         - Struktur Organisasi - Positions
       summary: Daftar Jabatan / Posisi
@@ -477,6 +497,7 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
 
     post:
+      operationId: createPosition
       tags:
         - Struktur Organisasi - Positions
       summary: Buat Jabatan Baru
@@ -509,6 +530,7 @@ paths:
         schema:
           type: string
     get:
+      operationId: getPosition
       tags:
         - Struktur Organisasi - Positions
       summary: Detail Jabatan
@@ -525,6 +547,7 @@ paths:
           $ref: '#/components/responses/NotFoundError'
 
     patch:
+      operationId: updatePosition
       tags:
         - Struktur Organisasi - Positions
       summary: Perbarui Jabatan
@@ -551,6 +574,7 @@ paths:
           $ref: '#/components/responses/ValidationError'
 
     delete:
+      operationId: deletePosition
       tags:
         - Struktur Organisasi - Positions
       summary: Hapus Jabatan
@@ -579,6 +603,7 @@ paths:
   # ==========================================
   /users:
     get:
+      operationId: listUsers
       tags:
         - Karyawan (Users - FR-03)
       summary: Daftar Karyawan / Users
@@ -640,6 +665,7 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
 
     post:
+      operationId: createUser
       tags:
         - Karyawan (Users - FR-03)
       summary: Tambah Karyawan Baru (Admin)
@@ -683,6 +709,7 @@ paths:
         schema:
           type: string
     get:
+      operationId: getUser
       tags:
         - Karyawan (Users - FR-03)
       summary: Detail Data Karyawan
@@ -702,6 +729,7 @@ paths:
           $ref: '#/components/responses/NotFoundError'
 
     patch:
+      operationId: updateUser
       tags:
         - Karyawan (Users - FR-03)
       summary: Perbarui Data Karyawan
@@ -738,6 +766,7 @@ paths:
         schema:
           type: string
     post:
+      operationId: deactivateUser
       tags:
         - Karyawan (Users - FR-03)
       summary: Nonaktifkan Karyawan
@@ -774,6 +803,7 @@ paths:
         schema:
           type: string
     post:
+      operationId: reactivateUser
       tags:
         - Karyawan (Users - FR-03)
       summary: Aktifkan Kembali Karyawan
@@ -800,6 +830,7 @@ paths:
         schema:
           type: string
     post:
+      operationId: resendUserInvitation
       tags:
         - Karyawan (Users - FR-03)
       summary: Kirim Ulang Undangan Akun
@@ -828,6 +859,7 @@ paths:
   # Alias endpoints untuk kompatibilitas usulan di PDF
   /employees:
     get:
+      operationId: listEmployeesAlias
       tags: [Karyawan (Users - FR-03)]
       deprecated: true
       summary: Alias GET /users
@@ -841,7 +873,12 @@ paths:
       responses:
         '200':
           $ref: '#/paths/~1users/get/responses/200'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
     post:
+      operationId: createEmployeeAlias
       tags: [Karyawan (Users - FR-03)]
       deprecated: true
       summary: Alias POST /users
@@ -850,6 +887,10 @@ paths:
       responses:
         '201':
           $ref: '#/paths/~1users/post/responses/201'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
 
   /employees/{id}:
     parameters:
@@ -859,13 +900,21 @@ paths:
         schema:
           type: string
     get:
+      operationId: getEmployeeAlias
       tags: [Karyawan (Users - FR-03)]
       deprecated: true
       summary: Alias GET /users/{id}
       responses:
         '200':
           $ref: '#/paths/~1users~1{id}/get/responses/200'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
     patch:
+      operationId: updateEmployeeAlias
       tags: [Karyawan (Users - FR-03)]
       deprecated: true
       summary: Alias PATCH /users/{id}
@@ -874,6 +923,12 @@ paths:
       responses:
         '200':
           $ref: '#/paths/~1users~1{id}/patch/responses/200'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
   /employees/{id}/deactivate:
     parameters:
@@ -883,6 +938,7 @@ paths:
         schema:
           type: string
     post:
+      operationId: deactivateEmployeeAlias
       tags: [Karyawan (Users - FR-03)]
       deprecated: true
       summary: Alias POST /users/{id}/deactivate
@@ -891,6 +947,12 @@ paths:
       responses:
         '200':
           $ref: '#/paths/~1users~1{id}~1deactivate/post/responses/200'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
   /employees/{id}/reactivate:
     parameters:
@@ -900,12 +962,19 @@ paths:
         schema:
           type: string
     post:
+      operationId: reactivateEmployeeAlias
       tags: [Karyawan (Users - FR-03)]
       deprecated: true
       summary: Alias POST /users/{id}/reactivate
       responses:
         '200':
           $ref: '#/paths/~1users~1{id}~1reactivate/post/responses/200'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
   /employees/{id}/invitation:
     parameters:
@@ -915,18 +984,26 @@ paths:
         schema:
           type: string
     post:
+      operationId: resendEmployeeInvitationAlias
       tags: [Karyawan (Users - FR-03)]
       deprecated: true
       summary: Alias POST /users/{id}/invitation
       responses:
         '200':
           $ref: '#/paths/~1users~1{id}~1invitation/post/responses/200'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
   # ==========================================
   # ME: PROFIL, JADWAL & LOKASI
   # ==========================================
   /me/profile:
     get:
+      operationId: getMyProfile
       tags:
         - Karyawan (Users - FR-03)
       summary: Detail profil lengkap pengguna saat ini
@@ -943,6 +1020,7 @@ paths:
 
   /me/schedule-location:
     get:
+      operationId: getMyScheduleLocation
       tags:
         - Absensi Harian (F03, F04)
       summary: Jadwal dan koordinat kantor pengguna saat ini
@@ -959,6 +1037,7 @@ paths:
 
   /me/settings:
     get:
+      operationId: getMySettings
       tags:
         - Karyawan (Users - FR-03)
       summary: Preferensi akun pengguna
@@ -972,6 +1051,7 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
     patch:
+      operationId: updateMySettings
       tags:
         - Karyawan (Users - FR-03)
       summary: Perbarui preferensi akun pengguna
@@ -996,6 +1076,7 @@ paths:
 
   /me/devices:
     post:
+      operationId: registerMyDevice
       tags:
         - Karyawan (Users - FR-03)
       summary: Daftarkan perangkat untuk notifikasi push
@@ -1019,6 +1100,7 @@ paths:
   # ==========================================
   /schedules:
     get:
+      operationId: listSchedules
       tags:
         - Data Master - Jadwal (F02)
       summary: Daftar jadwal kerja tenant
@@ -1047,6 +1129,7 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
     post:
+      operationId: createSchedule
       tags:
         - Data Master - Jadwal (F02)
       summary: Tambah jadwal kerja baru (Admin/HRD/Owner)
@@ -1074,6 +1157,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     get:
+      operationId: getSchedule
       tags:
         - Data Master - Jadwal (F02)
       summary: Detail jadwal kerja
@@ -1089,6 +1173,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
     patch:
+      operationId: updateSchedule
       tags:
         - Data Master - Jadwal (F02)
       summary: Perbarui jadwal kerja (Admin/HRD/Owner)
@@ -1114,6 +1199,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
+      operationId: deleteSchedule
       tags:
         - Data Master - Jadwal (F02)
       summary: Hapus jadwal kerja
@@ -1138,6 +1224,7 @@ paths:
   # ==========================================
   /locations:
     get:
+      operationId: listLocations
       tags:
         - Data Master - Lokasi Kantor (F02)
       summary: Daftar lokasi kantor tenant
@@ -1166,6 +1253,7 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
     post:
+      operationId: createLocation
       tags:
         - Data Master - Lokasi Kantor (F02)
       summary: Tambah lokasi kantor baru (Admin/HRD/Owner)
@@ -1194,6 +1282,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     get:
+      operationId: getLocation
       tags:
         - Data Master - Lokasi Kantor (F02)
       summary: Detail lokasi kantor
@@ -1209,6 +1298,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
     patch:
+      operationId: updateLocation
       tags:
         - Data Master - Lokasi Kantor (F02)
       summary: Perbarui lokasi kantor (Admin/HRD/Owner)
@@ -1234,6 +1324,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
+      operationId: deleteLocation
       tags:
         - Data Master - Lokasi Kantor (F02)
       summary: Hapus lokasi kantor
@@ -1258,6 +1349,7 @@ paths:
   # ==========================================
   /attendance/today:
     get:
+      operationId: getAttendanceToday
       tags:
         - Absensi Harian (F03, F04)
       summary: Status absensi hari ini pengguna saat ini
@@ -1276,6 +1368,7 @@ paths:
 
   /attendance/clock-in:
     post:
+      operationId: clockIn
       tags:
         - Absensi Harian (F03, F04)
       summary: Clock-in kehadiran masuk kerja
@@ -1320,6 +1413,7 @@ paths:
 
   /attendance/clock-out:
     post:
+      operationId: clockOut
       tags:
         - Absensi Harian (F03, F04)
       summary: Clock-out kehadiran pulang kerja
@@ -1358,6 +1452,7 @@ paths:
   # ==========================================
   /overtime-requests:
     get:
+      operationId: listOvertimeRequests
       tags:
         - Lembur & Persetujuan (F04)
       summary: Daftar pengajuan lembur (W34)
@@ -1391,6 +1486,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     get:
+      operationId: getOvertimeRequest
       tags:
         - Lembur & Persetujuan (F04)
       summary: Detail pengajuan lembur (W94)
@@ -1412,6 +1508,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     post:
+      operationId: approveOvertimeRequest
       tags:
         - Lembur & Persetujuan (F04)
       summary: Setujui pengajuan lembur (Team Lead divisinya, HRD, Owner)
@@ -1439,6 +1536,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     post:
+      operationId: rejectOvertimeRequest
       tags:
         - Lembur & Persetujuan (F04)
       summary: Tolak pengajuan lembur (Team Lead divisinya, HRD, Owner)
@@ -1471,6 +1569,7 @@ paths:
   # ==========================================
   /me/leave-quota:
     get:
+      operationId: getMyLeaveQuota
       tags:
         - Izin dan Cuti (F06)
       summary: Kuota cuti tahunan pengguna saat ini
@@ -1486,6 +1585,7 @@ paths:
 
   /me/leave-requests:
     get:
+      operationId: listMyLeaveRequests
       tags:
         - Izin dan Cuti (F06)
       summary: Daftar pengajuan izin/cuti pengguna sendiri (M16, KW17)
@@ -1515,6 +1615,7 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
     post:
+      operationId: createMyLeaveRequest
       tags:
         - Izin dan Cuti (F06)
       summary: Ajukan izin, cuti tahunan, atau sakit (M05, KW18)
@@ -1551,6 +1652,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     get:
+      operationId: getMyLeaveRequest
       tags:
         - Izin dan Cuti (F06)
       summary: Detail pengajuan izin/cuti (M41 "Lihat detail pengajuan")
@@ -1568,6 +1670,7 @@ paths:
 
   /me/leave-requests/preview:
     post:
+      operationId: previewMyLeaveRequest
       tags:
         - Izin dan Cuti (F06)
       summary: Pratinjau perhitungan hari kerja dan cek kuota sebelum kirim
@@ -1598,6 +1701,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     post:
+      operationId: cancelMyLeaveRequest
       x-draft: true
       tags:
         - Persetujuan Izin & Notifikasi (F07)
@@ -1617,6 +1721,7 @@ paths:
 
   /leave-requests:
     get:
+      operationId: listLeaveRequests
       x-draft: true
       tags:
         - Persetujuan Izin & Notifikasi (F07)
@@ -1646,6 +1751,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     get:
+      operationId: getLeaveRequest
       x-draft: true
       tags:
         - Persetujuan Izin & Notifikasi (F07)
@@ -1668,6 +1774,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     post:
+      operationId: approveLeaveRequest
       x-draft: true
       tags:
         - Persetujuan Izin & Notifikasi (F07)
@@ -1712,6 +1819,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     post:
+      operationId: rejectLeaveRequest
       x-draft: true
       tags:
         - Persetujuan Izin & Notifikasi (F07)
@@ -1743,6 +1851,7 @@ paths:
 
   /me/notifications:
     get:
+      operationId: listMyNotifications
       x-draft: true
       tags:
         - Persetujuan Izin & Notifikasi (F07)
@@ -1769,6 +1878,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     post:
+      operationId: markNotificationRead
       x-draft: true
       tags:
         - Persetujuan Izin & Notifikasi (F07)
@@ -1783,6 +1893,7 @@ paths:
 
   /me/notifications/read-all:
     post:
+      operationId: markAllNotificationsRead
       x-draft: true
       tags:
         - Persetujuan Izin & Notifikasi (F07)
@@ -1799,6 +1910,7 @@ paths:
   # ==========================================
   /clients:
     get:
+      operationId: listClients
       x-draft: true
       tags:
         - Proyek & Task (F08)
@@ -1821,6 +1933,7 @@ paths:
 
   /projects:
     get:
+      operationId: listProjects
       x-draft: true
       tags:
         - Proyek & Task (F08)
@@ -1846,6 +1959,7 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
     post:
+      operationId: createProject
       x-draft: true
       tags:
         - Proyek & Task (F08)
@@ -1872,6 +1986,7 @@ paths:
 
   /tasks:
     get:
+      operationId: listTasks
       x-draft: true
       tags:
         - Proyek & Task (F08)
@@ -1906,6 +2021,7 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
     post:
+      operationId: createTask
       x-draft: true
       tags:
         - Proyek & Task (F08)
@@ -1946,6 +2062,7 @@ paths:
   # ==========================================
   /me/tasks:
     get:
+      operationId: listMyTasks
       x-draft: true
       tags:
         - Progres Task (F09)
@@ -1969,6 +2086,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     get:
+      operationId: getTask
       x-draft: true
       tags:
         - Progres Task (F09)
@@ -1991,6 +2109,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     patch:
+      operationId: updateTaskStatus
       x-draft: true
       tags:
         - Progres Task (F09)
@@ -2025,6 +2144,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     post:
+      operationId: submitTaskResult
       x-draft: true
       tags:
         - Progres Task (F09)
@@ -2072,6 +2192,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     post:
+      operationId: approveTask
       x-draft: true
       tags:
         - Progres Task (F09)
@@ -2105,6 +2226,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     post:
+      operationId: requestTaskRevision
       x-draft: true
       tags:
         - Progres Task (F09)
@@ -2145,6 +2267,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     post:
+      operationId: addTaskComment
       x-draft: true
       tags:
         - Progres Task (F09)
@@ -2181,6 +2304,7 @@ paths:
   # ==========================================
   /payroll/salary-profiles:
     get:
+      operationId: listSalaryProfiles
       x-draft: true
       tags:
         - Komponen Gaji (F10)
@@ -2225,6 +2349,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     get:
+      operationId: getSalaryProfile
       x-draft: true
       tags:
         - Komponen Gaji (F10)
@@ -2243,6 +2368,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
     put:
+      operationId: updateSalaryProfile
       x-draft: true
       tags:
         - Komponen Gaji (F10)
@@ -2272,6 +2398,7 @@ paths:
 
   /payroll/rules:
     get:
+      operationId: getPayrollRules
       x-draft: true
       tags:
         - Komponen Gaji (F10)
@@ -2288,6 +2415,7 @@ paths:
         '403':
           $ref: '#/components/responses/ForbiddenError'
     put:
+      operationId: updatePayrollRules
       x-draft: true
       tags:
         - Komponen Gaji (F10)
@@ -2314,10 +2442,687 @@ paths:
           $ref: '#/components/responses/ValidationError'
 
   # ==========================================
+  # GENERATE PAYROLL, PENYESUAIAN & APPROVAL CEO (F11)
+  # DRAF usulan frontend (x-draft: true) - perlu dikonfirmasi tim backend.
+  # HRD: generate, penyesuaian, ajukan. CEO/Owner: setujui atau kembalikan.
+  # ==========================================
+  /payroll/runs/{period}:
+    parameters:
+      - $ref: '#/components/parameters/PeriodPath'
+    get:
+      operationId: getPayrollRun
+      x-draft: true
+      tags:
+        - Payroll (F11)
+      summary: Payroll satu periode + kesiapan data (W59, W07, W14, W65, W103)
+      description: Bila belum digenerate, `status` = `belum` dan `lines` kosong; `readiness` tetap terisi.
+      responses:
+        '200':
+          description: Payroll periode
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRun'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /payroll/runs/{period}/generate:
+    parameters:
+      - $ref: '#/components/parameters/PeriodPath'
+    post:
+      operationId: generatePayrollRun
+      x-draft: true
+      tags:
+        - Payroll (F11)
+      summary: Hitung payroll otomatis → Draft (W59, W60 · FR-23, US-10 AC-1)
+      description: |
+        Dari rekap kehadiran, lembur disetujui, izin/cuti, dan komponen gaji (F10). Boleh diulang selama
+        Draft; penyesuaian manual dipertahankan dan dicatat ulang di audit log. Periode Diajukan/Disetujui → 409.
+      responses:
+        '200':
+          description: Payroll Draft
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRun'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /payroll/runs/{period}/lines/{employee_id}:
+    parameters:
+      - $ref: '#/components/parameters/PeriodPath'
+      - name: employee_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getPayrollLine
+      x-draft: true
+      tags:
+        - Payroll (F11)
+      summary: Rincian gaji satu karyawan (W100)
+      responses:
+        '200':
+          description: Rincian
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollLine'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /payroll/runs/{period}/adjustments:
+    parameters:
+      - $ref: '#/components/parameters/PeriodPath'
+    post:
+      operationId: createPayrollAdjustment
+      x-draft: true
+      tags:
+        - Payroll (F11)
+      summary: Penyesuaian manual dengan alasan wajib (W13, W61 · FR-24, US-10 AC-2)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollAdjustmentRequest'
+      responses:
+        '201':
+          description: Tersimpan dan tercatat di audit log
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRun'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /payroll/runs/{period}/submit:
+    parameters:
+      - $ref: '#/components/parameters/PeriodPath'
+    post:
+      operationId: submitPayrollRun
+      x-draft: true
+      tags:
+        - Payroll (F11)
+      summary: Ajukan ke CEO (W63 · FR-25)
+      description: Status jadi `diajukan`; CEO/Owner dinotifikasi; HRD tidak bisa mengubah nilai.
+      responses:
+        '200':
+          description: Diajukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRun'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /payroll/runs/{period}/approve:
+    parameters:
+      - $ref: '#/components/parameters/PeriodPath'
+    post:
+      operationId: approvePayrollRun
+      x-draft: true
+      tags:
+        - Payroll (F11)
+      summary: Setujui & kunci (W64, W65 · US-10 AC-3; hanya CEO/Owner)
+      description: Payroll terkunci, slip gaji diterbitkan, dan karyawan menerima notifikasi `payslip_published`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reviewed]
+              properties:
+                reviewed:
+                  type: boolean
+                  description: Harus true ("Saya sudah meninjau rincian & penyesuaian manual")
+      responses:
+        '200':
+          description: Disetujui dan terkunci
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRun'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /payroll/runs/{period}/return:
+    parameters:
+      - $ref: '#/components/parameters/PeriodPath'
+    post:
+      operationId: returnPayrollRun
+      x-draft: true
+      tags:
+        - Payroll (F11)
+      summary: Kembalikan ke HRD dengan catatan wajib (W66, W103; hanya CEO/Owner)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [note]
+              properties:
+                note:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+      responses:
+        '200':
+          description: Kembali ke Draft
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRun'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /payroll/runs/{period}/audit-log:
+    parameters:
+      - $ref: '#/components/parameters/PeriodPath'
+    get:
+      operationId: getPayrollAuditLog
+      x-draft: true
+      tags:
+        - Payroll (F11)
+      summary: Audit log payroll, tidak dapat diubah atau dihapus (W62 · US-10 AC-2)
+      responses:
+        '200':
+          description: Entri terbaru di atas
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollAuditEntry'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  # ==========================================
+  # SLIP GAJI PDF & PEMBATASAN AKSES PAYROLL (F12)
+  # DRAF usulan frontend (x-draft: true) - perlu dikonfirmasi tim backend.
+  # ==========================================
+  /me/payslips:
+    get:
+      operationId: listMyPayslips
+      x-draft: true
+      tags:
+        - Slip Gaji & Akses (F12)
+      summary: Daftar slip gaji milik sendiri (M09, KW23 · FR-26, US-11 AC-2)
+      description: Hanya slip pemilik token. Periode yang payroll-nya belum disetujui tampil `proses` tanpa nominal.
+      responses:
+        '200':
+          description: Slip terbaru di atas
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayslipSummary'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /me/payslips/{period}:
+    parameters:
+      - $ref: '#/components/parameters/PeriodPath'
+    get:
+      operationId: getMyPayslip
+      x-draft: true
+      tags:
+        - Slip Gaji & Akses (F12)
+      summary: Rincian slip sendiri (M09, KW23)
+      responses:
+        '200':
+          description: Rincian slip
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payslip'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Slip belum terbit (M48) atau bukan milik pengguna
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /me/payslips/{period}/pdf:
+    parameters:
+      - $ref: '#/components/parameters/PeriodPath'
+    get:
+      operationId: downloadMyPayslipPdf
+      x-draft: true
+      tags:
+        - Slip Gaji & Akses (F12)
+      summary: Unduh slip PDF (M47, KW24 · US-11 AC-2)
+      description: PDF dilindungi kata sandi tanggal lahir (DDMMYYYY). Setiap unduhan tercatat (`downloaded_at`).
+      responses:
+        '200':
+          description: File PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /payroll/runs/{period}/payslips:
+    parameters:
+      - $ref: '#/components/parameters/PeriodPath'
+    get:
+      operationId: getPayslipDistribution
+      x-draft: true
+      tags:
+        - Slip Gaji & Akses (F12)
+      summary: Status pengiriman slip per karyawan (W67; HRD & CEO)
+      description: Hanya status kirim, buka, dan unduh; isi slip tidak ikut dikirim.
+      responses:
+        '200':
+          description: Status distribusi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayslipDistribution'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /payroll/runs/{period}/payslips/{employee_id}/resend:
+    parameters:
+      - $ref: '#/components/parameters/PeriodPath'
+      - name: employee_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: resendPayslip
+      x-draft: true
+      tags:
+        - Slip Gaji & Akses (F12)
+      summary: Kirim ulang notifikasi slip (W67 "Kirim ulang")
+      responses:
+        '202':
+          description: Notifikasi dijadwalkan ulang
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
+
+  /payroll/access-logs:
+    get:
+      operationId: listPayrollAccessLogs
+      x-draft: true
+      tags:
+        - Slip Gaji & Akses (F12)
+      summary: Log akses modul payroll, 30 hari terakhir (W68 · US-11 AC-1)
+      parameters:
+        - name: result
+          in: query
+          schema:
+            type: string
+            enum: [diizinkan, ditolak]
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Log akses + ringkasan
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, summary, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollAccessLog'
+                  summary:
+                    type: object
+                    required: [diizinkan, ditolak, denied_users, payslips_opened, exports]
+                    properties:
+                      diizinkan:
+                        type: integer
+                      ditolak:
+                        type: integer
+                      denied_users:
+                        type: integer
+                      payslips_opened:
+                        type: integer
+                      exports:
+                        type: integer
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /payroll/access-logs/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      operationId: getPayrollAccessLog
+      x-draft: true
+      tags:
+        - Slip Gaji & Akses (F12)
+      summary: Detail satu entri log akses (W101)
+      responses:
+        '200':
+          description: Detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollAccessLog'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ==========================================
+  # DASHBOARD & BEBAN KERJA (F13)
+  # DRAF usulan frontend (x-draft: true) - perlu dikonfirmasi tim backend.
+  # ==========================================
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      x-draft: true
+      tags:
+        - Dashboard & Beban Kerja (F13)
+      summary: Ringkasan kehadiran, task, dan payroll (W69, W72 · FR-29, FR-30, US-08 AC-1)
+      description: |
+        Owner/HRD menerima seluruh tenant + blok `payroll`. Team Lead hanya timnya sendiri dan
+        `payroll` selalu null (RBAC). Employee 403.
+      parameters:
+        - name: range
+          in: query
+          schema:
+            type: string
+            enum: [hari, minggu, bulan]
+            default: hari
+      responses:
+        '200':
+          description: Ringkasan dashboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /dashboard/attendance/live:
+    get:
+      operationId: getLiveAttendance
+      x-draft: true
+      tags:
+        - Dashboard & Beban Kerja (F13)
+      summary: Aktivitas clock-in terbaru dan titik peta geofence (W01)
+      responses:
+        '200':
+          description: Snapshot live
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [updated_at, activities, pins]
+                properties:
+                  updated_at:
+                    type: string
+                    format: date-time
+                  activities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LiveAttendanceEvent'
+                  pins:
+                    type: array
+                    items:
+                      type: object
+                      required: [employee, status, latitude, longitude]
+                      properties:
+                        employee:
+                          $ref: '#/components/schemas/EmployeeRef'
+                        status:
+                          type: string
+                          enum: [hadir, terlambat, luar_area]
+                        latitude:
+                          type: number
+                        longitude:
+                          type: number
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /dashboard/attendance/stream:
+    get:
+      operationId: streamLiveAttendance
+      x-draft: true
+      tags:
+        - Dashboard & Beban Kerja (F13)
+      summary: Stream update live (W02, Server-Sent Events)
+      description: Setiap clock-in/izin baru dikirim sebagai event `attendance` berisi LiveAttendanceEvent.
+      responses:
+        '200':
+          description: Stream SSE
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /dashboard/attendance/not-checked-in:
+    get:
+      operationId: listNotCheckedIn
+      x-draft: true
+      tags:
+        - Dashboard & Beban Kerja (F13)
+      summary: Karyawan belum absen setelah batas toleransi (W70)
+      responses:
+        '200':
+          description: Daftar belum absen
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [employee, schedule, reminder_sent_at]
+                      properties:
+                        employee:
+                          $ref: '#/components/schemas/EmployeeRef'
+                        schedule:
+                          type: string
+                          example: Reguler 09.00–17.00
+                        last_active_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        reminder_sent_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        leave_today:
+                          type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /attendance/reminders:
+    post:
+      operationId: sendAttendanceReminder
+      x-draft: true
+      tags:
+        - Dashboard & Beban Kerja (F13)
+      summary: Kirim ulang pengingat absen (W70 "Kirim pengingat lagi")
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id]
+              properties:
+                employee_id:
+                  type: string
+      responses:
+        '202':
+          description: Pengingat dijadwalkan
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
+
+  /reports/workload:
+    get:
+      operationId: getWorkloadReport
+      x-draft: true
+      tags:
+        - Dashboard & Beban Kerja (F13)
+      summary: Laporan beban kerja per karyawan (W11, W71 · FR-21)
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+      responses:
+        '200':
+          description: Beban kerja
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [summary, data]
+                properties:
+                  summary:
+                    type: object
+                    required: [active, overdue, done, team_utilization_percent]
+                    properties:
+                      active:
+                        type: integer
+                      overdue:
+                        type: integer
+                      done:
+                        type: integer
+                      team_utilization_percent:
+                        type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkloadItem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /tasks/{id}/assignee:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    put:
+      operationId: reassignTask
+      x-draft: true
+      tags:
+        - Dashboard & Beban Kerja (F13)
+      summary: Alihkan task ke anggota lain (W102)
+      description: Penanggung jawab baru menerima notifikasi; perubahan tercatat di riwayat task.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assignee_id]
+              properties:
+                assignee_id:
+                  type: string
+      responses:
+        '200':
+          description: Task setelah dialihkan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          description: Task sudah selesai atau anggota bukan bagian tim
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  # ==========================================
   # RIWAYAT & REKAPITULASI (F05)
   # ==========================================
   /me/attendance:
     get:
+      operationId: getMyAttendanceHistory
       tags:
         - Riwayat & Rekapitulasi (F05)
       summary: Riwayat absensi bulanan pengguna sendiri (M15, KW16)
@@ -2343,6 +3148,7 @@ paths:
           type: string
           format: date
     get:
+      operationId: getMyAttendanceDay
       tags:
         - Riwayat & Rekapitulasi (F05)
       summary: Detail absensi harian pengguna sendiri (M36)
@@ -2360,6 +3166,7 @@ paths:
 
   /attendance/recap:
     get:
+      operationId: getAttendanceRecap
       tags:
         - Riwayat & Rekapitulasi (F05)
       summary: Rekapitulasi absensi per karyawan (W05)
@@ -2389,6 +3196,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     get:
+      operationId: getEmployeeAttendance
       tags:
         - Riwayat & Rekapitulasi (F05)
       summary: Riwayat bulanan absensi karyawan untuk admin (W37)
@@ -2410,6 +3218,7 @@ paths:
 
   /attendance/recap/exports:
     post:
+      operationId: createAttendanceRecapExport
       tags:
         - Riwayat & Rekapitulasi (F05)
       summary: Buat dokumen ekspor PDF rekapitulasi di server (W38)
@@ -2440,6 +3249,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/IdPath'
     get:
+      operationId: getAttendanceRecapExport
       tags:
         - Riwayat & Rekapitulasi (F05)
       summary: Cek status pembuatan dan tautan unduhan dokumen PDF (W39, W98)
@@ -2549,6 +3359,15 @@ components:
         type: string
         pattern: '^\d{4}-(0[1-9]|1[0-2])$'
         example: '2026-09'
+    PeriodPath:
+      name: period
+      in: path
+      required: true
+      description: Periode payroll YYYY-MM
+      schema:
+        type: string
+        pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+        example: '2026-10'
     DepartmentQuery:
       name: department_id
       in: query
@@ -3859,7 +4678,8 @@ components:
       properties:
         type:
           type: string
-          enum: [cuti, izin, sakit]
+          enum: [cuti, izin, sakit, wfh]
+          description: '`wfh` (WFH / Dinas Luar) = USULAN frontend dari revisi Figma F06 (M38), perlu dikonfirmasi backend. Tidak memotong kuota cuti; disetujui Team Lead.'
         start_date:
           type: string
           format: date
@@ -3884,7 +4704,7 @@ components:
       properties:
         type:
           type: string
-          enum: [cuti, izin, sakit]
+          enum: [cuti, izin, sakit, wfh]
         start_date:
           type: string
           format: date
@@ -4820,3 +5640,425 @@ components:
           enum: ['TK/0', 'TK/1', 'TK/2', 'TK/3', 'K/0', 'K/1', 'K/2', 'K/3']
         auto_pph21:
           type: boolean
+
+    # ---------- F11 (DRAF, x-draft: true) ----------
+    PayrollStatus:
+      x-draft: true
+      type: string
+      enum: [belum, draft, diajukan, disetujui]
+
+    PayrollComponent:
+      x-draft: true
+      type: string
+      enum: [base_salary, transport_allowance, overtime, project_bonus, bpjs_health, bpjs_employment, pph21, late, absent]
+
+    PayrollLine:
+      x-draft: true
+      type: object
+      required: [employee, base_salary, allowance, overtime, deductions, net, items, adjusted]
+      properties:
+        employee:
+          $ref: '#/components/schemas/EmployeeRef'
+        base_salary:
+          $ref: '#/components/schemas/MoneyAmount'
+        allowance:
+          $ref: '#/components/schemas/MoneyAmount'
+        overtime:
+          $ref: '#/components/schemas/MoneyAmount'
+        deductions:
+          $ref: '#/components/schemas/MoneyAmount'
+        net:
+          $ref: '#/components/schemas/MoneyAmount'
+        adjusted:
+          type: boolean
+          description: Ada penyesuaian manual ("Disesuaikan HRD")
+        items:
+          type: array
+          description: Rincian W100 per komponen
+          items:
+            type: object
+            required: [component, label, amount, kind]
+            properties:
+              component:
+                $ref: '#/components/schemas/PayrollComponent'
+              label:
+                type: string
+                example: Lembur · 3 jam × 116.667
+              amount:
+                $ref: '#/components/schemas/MoneyAmount'
+              kind:
+                type: string
+                enum: [earning, deduction]
+
+    PayrollRun:
+      x-draft: true
+      type: object
+      required: [period, status, readiness, lines, summary]
+      properties:
+        period:
+          type: string
+          pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+        status:
+          $ref: '#/components/schemas/PayrollStatus'
+        readiness:
+          type: array
+          description: Cek kesiapan W59; `warning` tidak menghalangi generate
+          items:
+            type: object
+            required: [key, state, detail]
+            properties:
+              key:
+                type: string
+                enum: [attendance, leave, salary_profiles, overtime, tax_rules]
+              state:
+                type: string
+                enum: [ok, warning]
+              detail:
+                type: string
+                example: 14 dari 16 profil lengkap · 2 belum lengkap
+        summary:
+          type: object
+          required: [employees, net_total, deduction_total, overtime_minutes, overtime_total, adjustments]
+          properties:
+            employees:
+              type: integer
+            net_total:
+              $ref: '#/components/schemas/MoneyAmount'
+            deduction_total:
+              $ref: '#/components/schemas/MoneyAmount'
+            overtime_minutes:
+              type: integer
+            overtime_total:
+              $ref: '#/components/schemas/MoneyAmount'
+            adjustments:
+              type: integer
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollLine'
+        generated_at:
+          type: string
+          format: date-time
+          nullable: true
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+        submitted_by:
+          type: string
+          nullable: true
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+        approved_by:
+          type: string
+          nullable: true
+        return_note:
+          type: object
+          nullable: true
+          description: Catatan CEO saat dikembalikan (W103)
+          properties:
+            note:
+              type: string
+            by:
+              type: string
+            at:
+              type: string
+              format: date-time
+
+    PayrollAdjustmentRequest:
+      x-draft: true
+      type: object
+      required: [employee_id, component, new_value, reason]
+      properties:
+        employee_id:
+          type: string
+        component:
+          $ref: '#/components/schemas/PayrollComponent'
+        new_value:
+          $ref: '#/components/schemas/MoneyAmount'
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 200
+
+    PayrollAuditEntry:
+      x-draft: true
+      type: object
+      required: [id, action, actor, at]
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          enum: [generated, adjusted, submitted, returned, approved, components_updated]
+        title:
+          type: string
+          example: Adjustment lembur · Made Nandana P.
+        detail:
+          type: string
+          example: Rp 350 rb → 450 rb
+        reason:
+          type: string
+          nullable: true
+        actor:
+          type: string
+          example: Sri Rahayu (HRD)
+        at:
+          type: string
+          format: date-time
+
+    # ---------- F12 (DRAF, x-draft: true) ----------
+    PayslipSummary:
+      x-draft: true
+      type: object
+      required: [period, status]
+      properties:
+        period:
+          type: string
+          pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+        status:
+          type: string
+          enum: [proses, dibayar]
+        net:
+          type: string
+          nullable: true
+          pattern: '^\d+(\.\d{2})?$'
+          description: Format sama dengan MoneyAmount; null selama status `proses` (payroll belum disetujui)
+          example: '7845000.00'
+
+    Payslip:
+      x-draft: true
+      type: object
+      required: [period, status, net, gross, deductions, items, file_name]
+      properties:
+        period:
+          type: string
+        status:
+          type: string
+          enum: [proses, dibayar]
+        net:
+          $ref: '#/components/schemas/MoneyAmount'
+        gross:
+          $ref: '#/components/schemas/MoneyAmount'
+        deductions:
+          $ref: '#/components/schemas/MoneyAmount'
+        items:
+          type: array
+          items:
+            type: object
+            required: [label, amount, kind]
+            properties:
+              label:
+                type: string
+                example: Lembur (3 jam)
+              amount:
+                $ref: '#/components/schemas/MoneyAmount'
+              kind:
+                type: string
+                enum: [earning, deduction]
+        paid_at:
+          type: string
+          format: date
+          nullable: true
+        bank_account_masked:
+          type: string
+          nullable: true
+          example: BCA •••• 4821
+        approved_by:
+          type: string
+          example: Ananda Sartana (CEO)
+        employee_number:
+          type: string
+          example: 2024-031
+        file_name:
+          type: string
+          example: Slip_Gaji_Sep2026.pdf
+        file_size_bytes:
+          type: integer
+          example: 131072
+
+    PayslipDistribution:
+      x-draft: true
+      type: object
+      required: [issued_at, summary, data]
+      properties:
+        issued_at:
+          type: string
+          format: date-time
+        summary:
+          type: object
+          required: [issued, opened, downloaded, unopened]
+          properties:
+            issued:
+              type: integer
+            opened:
+              type: integer
+            downloaded:
+              type: integer
+            unopened:
+              type: integer
+        data:
+          type: array
+          items:
+            type: object
+            required: [employee, net, sent_at]
+            properties:
+              employee:
+                $ref: '#/components/schemas/EmployeeRef'
+              net:
+                $ref: '#/components/schemas/MoneyAmount'
+              sent_at:
+                type: string
+                format: date-time
+              opened_at:
+                type: string
+                format: date-time
+                nullable: true
+              downloaded_at:
+                type: string
+                format: date-time
+                nullable: true
+
+    PayrollAccessLog:
+      x-draft: true
+      type: object
+      required: [id, user, role, at, path, device, result]
+      properties:
+        id:
+          type: string
+        user:
+          $ref: '#/components/schemas/EmployeeRef'
+        role:
+          type: string
+          example: Staff · Design
+        at:
+          type: string
+          format: date-time
+        path:
+          type: string
+          example: /payroll
+        device:
+          type: string
+          example: Chrome · macOS
+        result:
+          type: string
+          enum: [diizinkan, ditolak]
+        incident_code:
+          type: string
+          nullable: true
+          description: Terisi untuk akses ditolak; juga dikirim di ProblemDetails 403 (`code`)
+          example: ACC-403-20261001-0917
+
+    # ---------- F13 (DRAF, x-draft: true) ----------
+    DashboardSummary:
+      x-draft: true
+      type: object
+      required: [attendance, tasks, week, attention]
+      properties:
+        attendance:
+          type: object
+          required: [present, late, late_average_minutes, on_leave, not_checked_in, total]
+          properties:
+            present:
+              type: integer
+            late:
+              type: integer
+            late_average_minutes:
+              type: integer
+            on_leave:
+              type: integer
+            not_checked_in:
+              type: integer
+            total:
+              type: integer
+        tasks:
+          type: object
+          required: [active, overdue, done_this_month]
+          properties:
+            active:
+              type: integer
+            overdue:
+              type: integer
+            done_this_month:
+              type: integer
+        payroll:
+          type: object
+          nullable: true
+          description: Hanya owner & HRD. Selalu null untuk team_lead.
+          properties:
+            period:
+              type: string
+            status:
+              $ref: '#/components/schemas/PayrollStatus'
+            total_cost:
+              $ref: '#/components/schemas/MoneyAmount'
+            submitted_at:
+              type: string
+              format: date-time
+              nullable: true
+        week:
+          type: array
+          items:
+            type: object
+            required: [date, present, late]
+            properties:
+              date:
+                type: string
+                format: date
+              present:
+                type: integer
+              late:
+                type: integer
+        attention:
+          type: array
+          items:
+            type: object
+            required: [kind, count]
+            properties:
+              kind:
+                type: string
+                enum: [belum_absen, izin_menunggu, lembur_menunggu, profil_gaji_belum_lengkap, task_review]
+              count:
+                type: integer
+
+    LiveAttendanceEvent:
+      x-draft: true
+      type: object
+      required: [employee, status, at]
+      properties:
+        employee:
+          $ref: '#/components/schemas/EmployeeRef'
+        status:
+          type: string
+          enum: [hadir, terlambat, wfh, sakit, izin, cuti]
+        at:
+          type: string
+          format: date-time
+        location_label:
+          type: string
+          example: Kantor Sanur
+        distance_meters:
+          type: integer
+          nullable: true
+
+    WorkloadItem:
+      x-draft: true
+      type: object
+      required: [employee, total, active, overdue, done, utilization_percent]
+      properties:
+        employee:
+          $ref: '#/components/schemas/EmployeeRef'
+        total:
+          type: integer
+        active:
+          type: integer
+        overdue:
+          type: integer
+        done:
+          type: integer
+        utilization_percent:
+          type: integer
+        worked_hours:
+          type: number

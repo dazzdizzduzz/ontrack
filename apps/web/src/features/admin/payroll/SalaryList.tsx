@@ -17,7 +17,6 @@ export function SalaryList() {
 
   return (
     <main className={shared.main}>
-      {/* Payroll (W07) dibuat di F11; sementara /payroll membuka halaman ini. */}
       <ButtonLink variant="ghost" compact href="/payroll" className={shared.back}>
         Kembali ke Payroll
       </ButtonLink>

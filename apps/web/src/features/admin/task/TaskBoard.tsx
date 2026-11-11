@@ -145,10 +145,9 @@ export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?:
             Kelola proyek
             <Image src="/icons/building.svg" alt="" width={20} height={20} unoptimized />
           </ButtonLink>
-          {/* MOCK: laporan beban kerja dikerjakan di fitur berikutnya. */}
-          <Button variant="secondary" compact>
+          <ButtonLink variant="secondary" compact href="/task/beban-kerja">
             Laporan beban kerja
-          </Button>
+          </ButtonLink>
           <Button compact onClick={() => setFormOpen(true)}>
             Task baru
             <Image src="/icons/plus-inverse.svg" alt="" width={20} height={20} unoptimized />

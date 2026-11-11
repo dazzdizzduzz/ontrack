@@ -1,0 +1,90 @@
+/* W67, W68: kolom karyawan lebih sempit dari W15 agar 7 kolom muat di 1440. */
+.table th:first-child,
+.table td:first-child {
+  width: 240px;
+}
+
+.table .colWide {
+  width: 160px;
+}
+
+.role {
+  color: var(--color-text-accent);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.danger {
+  color: var(--color-status-danger-fg);
+}
+
+.strong {
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+/* W68: baris akses ditolak terbaru disorot merah muda. */
+.highlight {
+  background: var(--color-status-danger-bg);
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-16);
+}
+
+.lockNote {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--type-caption-font);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+/* W101: kartu data akses. */
+.kv {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-8) var(--space-16);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-canvas);
+}
+
+.kvRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-8) 0;
+  font: var(--type-body-s-font);
+  letter-spacing: var(--type-body-s-tracking);
+}
+
+.kvRow dt {
+  color: var(--color-text-secondary);
+}
+
+.kvRow dd {
+  margin: 0;
+  text-align: right;
+}
+
+.kvRow:last-child dt {
+  color: var(--color-text-primary);
+  font: var(--type-label-m-font);
+  letter-spacing: var(--type-label-m-tracking);
+}
+
+@media (max-width: 1023px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.strong abbr {
+  text-decoration: none;
+}

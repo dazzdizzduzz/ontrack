@@ -3,7 +3,9 @@ import {
   LEAVE_REASON_MAX,
   formatFileSize,
   formatLeaveDays,
+  formatDateInput,
   formatStamp,
+  leaveFormLabels,
   leaveTypeLabels,
   parseDateInput,
   remainingQuota,
@@ -27,11 +29,12 @@ import { Icon } from '@/components/ui/Icon';
 import { TENANT_TIME_ZONE } from '@/features/attendance/data';
 import { TopAppBar } from '@/components/ui/TopAppBar';
 import { textStyle } from '@/theme/text';
+import { DatePickerSheet } from './DatePickerSheet';
 import { QuotaCard } from './LeaveParts';
 import { useLeave } from './LeaveProvider';
 import { TypeSheet } from './TypeSheet';
 
-export type LeaveFormPreview = 'contoh' | 'jenis' | 'sakit' | 'validasi' | 'kuota';
+export type LeaveFormPreview = 'contoh' | 'jenis' | 'tanggal' | 'sakit' | 'validasi' | 'kuota';
 
 const WEEKDAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const weekdayOf = (iso: string) =>
@@ -43,6 +46,7 @@ const emptyDraft: LeaveDraft = { type: 'cuti', start: '', end: '', reason: '' };
 const previewDrafts: Record<LeaveFormPreview, LeaveDraft> = {
   contoh: sampleLeaveDraft,
   jenis: sampleLeaveDraft,
+  tanggal: sampleLeaveDraft,
   kuota: sampleLeaveDraft,
   sakit: {
     type: 'sakit',
@@ -67,6 +71,7 @@ export function LeaveFormScreen({ preview }: { preview?: LeaveFormPreview }) {
   const [draft, setDraft] = useState<LeaveDraft>(preview ? previewDrafts[preview] : emptyDraft);
   const [submitted, setSubmitted] = useState(preview === 'validasi');
   const [sheetOpen, setSheetOpen] = useState(preview === 'jenis');
+  const [pickerOpen, setPickerOpen] = useState(preview === 'tanggal');
   const [fileError, setFileError] = useState<string | null>(null);
 
   const { errors, days } = validateLeave(draft, quota, { checkRequired: submitted });
@@ -140,40 +145,30 @@ export function LeaveFormScreen({ preview }: { preview?: LeaveFormPreview }) {
           <Text style={styles.label}>Jenis pengajuan</Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Jenis pengajuan ${leaveTypeLabels[draft.type]}. Ketuk untuk mengganti.`}
+            accessibilityLabel={`Jenis pengajuan ${leaveFormLabels[draft.type]}. Ketuk untuk mengganti.`}
             onPress={() => setSheetOpen(true)}
             style={styles.select}
           >
-            <Text style={styles.selectValue}>{leaveTypeLabels[draft.type]}</Text>
+            <Text style={styles.selectValue}>{leaveFormLabels[draft.type]}</Text>
             <Icon name="chevron-down" size={20} />
           </Pressable>
         </View>
 
         <View style={styles.dates}>
-          <View style={styles.date}>
-            <TextField
-              label="Tanggal mulai"
-              value={draft.start}
-              onChangeText={(start) => update({ start })}
-              placeholder="dd/mm/yyyy"
-              keyboardType="numbers-and-punctuation"
-              maxLength={10}
-              helper={startIso ? weekdayOf(startIso) : ' '}
-              error={errors.start}
-            />
-          </View>
-          <View style={styles.date}>
-            <TextField
-              label="Tanggal selesai"
-              value={draft.end}
-              onChangeText={(end) => update({ end })}
-              placeholder="dd/mm/yyyy"
-              keyboardType="numbers-and-punctuation"
-              maxLength={10}
-              helper={endHelper ?? ' '}
-              error={errors.end}
-            />
-          </View>
+          <DateField
+            label="Tanggal mulai"
+            value={draft.start}
+            helper={startIso ? weekdayOf(startIso) : ' '}
+            error={errors.start}
+            onPress={() => setPickerOpen(true)}
+          />
+          <DateField
+            label="Tanggal selesai"
+            value={draft.end}
+            helper={endHelper ?? ' '}
+            error={errors.end}
+            onPress={() => setPickerOpen(true)}
+          />
         </View>
 
         <TextField
@@ -256,6 +251,47 @@ export function LeaveFormScreen({ preview }: { preview?: LeaveFormPreview }) {
         }}
         onClose={() => setSheetOpen(false)}
       />
+      <DatePickerSheet
+        visible={pickerOpen}
+        type={draft.type}
+        value={{ start: startIso, end: endIso }}
+        onClose={() => setPickerOpen(false)}
+        onApply={({ start, end }) => {
+          update({ start: formatDateInput(start), end: formatDateInput(end) });
+          setPickerOpen(false);
+        }}
+      />
+    </View>
+  );
+}
+
+/** Field tanggal yang membuka M58; nilainya tetap teks dd/mm/yyyy agar validasi sama. */
+function DateField({
+  label,
+  value,
+  helper,
+  error,
+  onPress,
+}: {
+  label: string;
+  value: string;
+  helper: string;
+  error?: string;
+  onPress: () => void;
+}) {
+  return (
+    <View style={[styles.field, styles.date]}>
+      <Text style={styles.label}>{label}</Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${label} ${value || 'belum dipilih'}. Ketuk untuk memilih tanggal.`}
+        accessibilityHint={error}
+        onPress={onPress}
+        style={[styles.select, error ? styles.selectError : null]}
+      >
+        <Text style={[styles.selectValue, !value && styles.placeholder]}>{value || 'dd/mm/yyyy'}</Text>
+      </Pressable>
+      <Text style={[styles.dateHelper, error ? styles.error : null]}>{error ?? helper}</Text>
     </View>
   );
 }
@@ -295,6 +331,18 @@ const styles = StyleSheet.create({
   dates: {
     flexDirection: 'row',
     gap: space[12],
+  },
+  selectError: {
+    borderWidth: 2,
+    borderColor: color.status.dangerFg,
+    paddingHorizontal: space[16] - 1,
+  },
+  placeholder: {
+    color: color.text.secondary,
+  },
+  dateHelper: {
+    ...textStyle('caption'),
+    color: color.text.secondary,
   },
   date: {
     flex: 1,

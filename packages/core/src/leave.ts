@@ -1,6 +1,6 @@
 import { isWeekend } from './attendanceHistory';
 
-/** Jenis pengajuan F06. WFH hanya ada di riwayat contoh; formulir F06 memakai tiga jenis pertama. */
+/** Jenis pengajuan F06. WFH / Dinas Luar tidak memotong kuota dan disetujui Team Lead (M38). */
 export type LeaveType = 'cuti' | 'izin' | 'sakit' | 'wfh';
 export type LeaveStatus = 'menunggu' | 'disetujui' | 'ditolak';
 
@@ -12,7 +12,10 @@ export const leaveTypeLabels: Record<LeaveType, string> = {
 };
 
 /** Jenis yang bisa dipilih di formulir (M38, KW18). */
-export const formLeaveTypes: Exclude<LeaveType, 'wfh'>[] = ['cuti', 'izin', 'sakit'];
+export const formLeaveTypes: LeaveType[] = ['cuti', 'izin', 'sakit', 'wfh'];
+
+/** Label di pilihan jenis formulir; di daftar dan badge tetap "WFH". */
+export const leaveFormLabels: Record<LeaveType, string> = { ...leaveTypeLabels, wfh: 'WFH / Dinas Luar' };
 
 export type LeaveAttachment = { name: string; sizeBytes: number; kind: 'PDF' | 'JPG' };
 
@@ -128,7 +131,7 @@ export function formatFileSize(bytes: number): string {
 }
 
 export type LeaveDraft = {
-  type: Exclude<LeaveType, 'wfh'>;
+  type: LeaveType;
   /** Isian tanggal "dd/mm/yyyy". */
   start: string;
   end: string;
@@ -217,8 +220,7 @@ export const sampleLowLeaveQuota: LeaveQuota = { ...sampleLeaveQuota, used: 10 }
 export const sampleLeaveApprover = { name: 'I Komang Agus S.', role: 'Team Lead' };
 
 export const sampleLeaveRequests: LeaveRequest[] = [
-  { id: 'sakit-2509', type: 'sakit', start: '2026-09-25', end: '2026-09-25', days: 0.5, reason: 'Kontrol dokter gigi', status: 'disetujui', submittedAt: '24/09/2026 · 10:02', decidedAt: '24/09/2026 · 13:30', decidedBy: 'I Komang Agus S.' },
-  { id: 'wfh-1809', type: 'wfh', start: '2026-09-18', end: '2026-09-18', days: 1, reason: 'Alasan: deadline klien di kantor', status: 'ditolak', submittedAt: '17/09/2026 · 19:40', decidedAt: '17/09/2026 · 20:15', decidedBy: 'I Komang Agus S.', decisionNote: 'Presentasi klien harus dari kantor.' },
+  { id: 'sakit-2509', type: 'sakit', start: '2026-09-25', end: '2026-09-25', days: 1, reason: 'Kontrol dokter gigi', status: 'disetujui', submittedAt: '24/09/2026 · 10:02', decidedAt: '24/09/2026 · 13:30', decidedBy: 'I Komang Agus S.' },
   { id: 'izin-0209', type: 'izin', start: '2026-09-02', end: '2026-09-02', days: 1, reason: 'Urusan administrasi bank', status: 'disetujui', submittedAt: '01/09/2026 · 08:20', decidedAt: '01/09/2026 · 09:05', decidedBy: 'I Komang Agus S.' },
 ];
 
@@ -307,4 +309,34 @@ export function formatStamp(date: Date, timeZone: string): string {
   }).formatToParts(date);
   const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? '';
   return `${get('day')}/${get('month')}/${get('year')} · ${get('hour')}:${get('minute')}`;
+}
+
+// ---------------------------------------------------------------------------------------------
+// M58 · KW29 · Pemilih tanggal (rentang). Minggu dimulai Senin, akhir pekan tidak bisa dipilih.
+
+/** MOCK: "hari ini" contoh Figma M58 (Kamis, 01/10/2026); nanti dari jam perangkat. */
+export const sampleLeaveToday = '2026-10-01';
+
+export type DateRange = { start: string | null; end: string | null };
+
+/**
+ * Ketukan pertama memilih tanggal mulai, ketukan kedua tanggal selesai. Ketukan sebelum tanggal
+ * mulai, atau saat rentang sudah lengkap, memulai rentang baru.
+ */
+export function pickRangeDate(range: DateRange, iso: string): DateRange {
+  if (!range.start || range.end || iso < range.start) return { start: iso, end: null };
+  return { start: range.start, end: iso };
+}
+
+/** "Selasa, 06/10 – Kamis, 08/10/2026 · 3 hari kerja" (M58). */
+export function formatPickedRange(range: DateRange): string {
+  if (!range.start) return 'Pilih tanggal mulai';
+  const names = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const day = (iso: string) => names[new Date(`${iso}T00:00:00Z`).getUTCDay()];
+  const [y, m, d] = range.start.split('-');
+  if (!range.end) return `${day(range.start)}, ${d}/${m}/${y} · pilih tanggal selesai`;
+  const [ey, em, ed] = range.end.split('-');
+  const days = workingDaysBetween(range.start, range.end);
+  const startText = range.start === range.end ? '' : `${day(range.start)}, ${d}/${m} – `;
+  return `${startText}${day(range.end)}, ${ed}/${em}/${ey} · ${formatLeaveDays(days)} kerja`;
 }

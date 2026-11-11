@@ -19,57 +19,7 @@ export interface paths {
          *     dan refresh token (rotasi). Memiliki proteksi lockout setelah 5x gagal.
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["LoginRequest"];
-                };
-            };
-            responses: {
-                /** @description Berhasil masuk */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LoginResponse"];
-                    };
-                };
-                /** @description Kredensial tidak valid */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Format email atau kata sandi tidak memenuhi kriteria */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Akun terkunci karena percobaan gagal berulang */
-                423: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        post: operations["login"];
         delete?: never;
         options?: never;
         head?: never;
@@ -89,41 +39,7 @@ export interface paths {
          * Refresh Access Token
          * @description Menukar refresh token yang valid dengan pasangan access token baru dan refresh token baru (rotasi).
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        refresh_token: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Token baru berhasil diterbitkan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AuthTokens"];
-                    };
-                };
-                /** @description Refresh token tidak valid atau sudah kedaluwarsa */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        post: operations["refreshToken"];
         delete?: never;
         options?: never;
         head?: never;
@@ -143,30 +59,7 @@ export interface paths {
          * Keluar dari sistem (Logout)
          * @description Mencabut refresh token sesi saat ini.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Berhasil keluar */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @example true */
-                            success?: boolean;
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        post: operations["logout"];
         delete?: never;
         options?: never;
         head?: never;
@@ -184,27 +77,7 @@ export interface paths {
          * Dapatkan profil pengguna saat ini
          * @description Mengambil data pengguna login dari klaim token JWT aktif.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Profil pengguna aktif */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserProfile"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["getMe"];
         put?: never;
         post?: never;
         delete?: never;
@@ -228,30 +101,7 @@ export interface paths {
          *     Tautan berlaku 30 menit dan sekali pakai. Kirim ulang paling cepat 45 detik sekali → 429 + `Retry-After`.
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ForgotPasswordRequest"];
-                };
-            };
-            responses: {
-                /** @description Permintaan diterima; email dikirim bila akun ada */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                422: components["responses"]["ValidationError"];
-                429: components["responses"]["TooManyRequestsError"];
-            };
-        };
+        post: operations["requestPasswordReset"];
         delete?: never;
         options?: never;
         head?: never;
@@ -273,38 +123,7 @@ export interface paths {
          *     Token kedaluwarsa atau sudah dipakai → 410 `RESET_TOKEN_EXPIRED`. Semua refresh token user dicabut.
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ResetPasswordRequest"];
-                };
-            };
-            responses: {
-                /** @description Kata sandi berhasil diubah (W22, KW06, M25) */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Tautan reset kedaluwarsa atau sudah dipakai */
-                410: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["resetPassword"];
         delete?: never;
         options?: never;
         head?: never;
@@ -322,61 +141,14 @@ export interface paths {
          * Matriks peran × fitur tenant (W18)
          * @description 5 peran per tenant; `super_admin` di level platform dan tidak muncul di matriks.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Matriks hak akses */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RolePermissions"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-            };
-        };
+        get: operations["getRolePermissions"];
         /**
          * Simpan matriks hak akses (W18, W73, W74)
          * @description Mengganti seluruh matriks dan mencatatnya di audit log (nilai sebelum dan sesudah).
          *     Owner tidak boleh mencabut `employees.manage` miliknya → 422 `OWNER_LOCKOUT`.
          *
          */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RolePermissions"];
-                };
-            };
-            responses: {
-                /** @description Matriks tersimpan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RolePermissions"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        put: operations["setRolePermissions"];
         post?: never;
         delete?: never;
         options?: never;
@@ -395,78 +167,13 @@ export interface paths {
          * Daftar Departemen / Divisi
          * @description Mengambil daftar departemen untuk tenant dari pengguna aktif.
          */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Filter pencarian nama departemen */
-                    search?: string;
-                    /** @description Nomor halaman */
-                    page?: number;
-                    /** @description Jumlah item per halaman (maks. 100) */
-                    per_page?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Daftar departemen */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data?: components["schemas"]["Department"][];
-                            meta?: components["schemas"]["PaginationMeta"];
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["listDepartments"];
         put?: never;
         /**
          * Buat Departemen Baru
          * @description Menambahkan departemen baru ke tenant. Hanya dapat diakses oleh Admin (Owner / HRD).
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateDepartmentRequest"];
-                };
-            };
-            responses: {
-                /** @description Departemen berhasil dibuat */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Department"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                /** @description Departemen dengan nama tersebut sudah ada di tenant */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["createDepartment"];
         delete?: never;
         options?: never;
         head?: never;
@@ -487,112 +194,21 @@ export interface paths {
          * Detail Departemen
          * @description Mengambil informasi detail sebuah departemen dalam tenant.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description ID Departemen (UUID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Detail departemen */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Department"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getDepartment"];
         put?: never;
         post?: never;
         /**
          * Hapus Departemen
          * @description Menghapus departemen jika belum ada karyawan atau jabatan yang terhubung.
          */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description ID Departemen (UUID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Departemen berhasil dihapus */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @example true */
-                            success?: boolean;
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-                /** @description Departemen tidak dapat dihapus karena masih digunakan */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        delete: operations["deleteDepartment"];
         options?: never;
         head?: never;
         /**
          * Perbarui Departemen
          * @description Memperbarui data departemen.
          */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description ID Departemen (UUID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateDepartmentRequest"];
-                };
-            };
-            responses: {
-                /** @description Departemen berhasil diperbarui */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Department"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        patch: operations["updateDepartment"];
         trace?: never;
     };
     "/positions": {
@@ -606,69 +222,13 @@ export interface paths {
          * Daftar Jabatan / Posisi
          * @description Mengambil daftar jabatan dalam tenant.
          */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Filter berdasarkan departemen */
-                    department_id?: string;
-                    /** @description Filter pencarian nama jabatan */
-                    search?: string;
-                    page?: number;
-                    per_page?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Daftar jabatan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data?: components["schemas"]["Position"][];
-                            meta?: components["schemas"]["PaginationMeta"];
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["listPositions"];
         put?: never;
         /**
          * Buat Jabatan Baru
          * @description Menambahkan posisi/jabatan baru ke tenant.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreatePositionRequest"];
-                };
-            };
-            responses: {
-                /** @description Jabatan berhasil dibuat */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Position"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["createPosition"];
         delete?: never;
         options?: never;
         head?: never;
@@ -685,95 +245,15 @@ export interface paths {
             cookie?: never;
         };
         /** Detail Jabatan */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Detail jabatan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Position"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getPosition"];
         put?: never;
         post?: never;
         /** Hapus Jabatan */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Berhasil */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @example true */
-                            success?: boolean;
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        delete: operations["deletePosition"];
         options?: never;
         head?: never;
         /** Perbarui Jabatan */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdatePositionRequest"];
-                };
-            };
-            responses: {
-                /** @description Berhasil */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Position"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        patch: operations["updatePosition"];
         trace?: never;
     };
     "/users": {
@@ -793,41 +273,7 @@ export interface paths {
          *     hanya disertakan apabila pemanggil memiliki peran `owner` atau `hrd`.
          *
          */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Filter status karyawan */
-                    status?: "aktif" | "nonaktif" | "diundang";
-                    /** @description Filter berdasarkan ID Departemen */
-                    department_id?: string;
-                    /** @description Filter berdasarkan peran */
-                    role?: "owner" | "hrd" | "team_lead" | "employee" | "cashier";
-                    /** @description Pencarian nama atau email */
-                    search?: string;
-                    page?: number;
-                    per_page?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Daftar data karyawan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data?: components["schemas"]["UserResponse"][];
-                            meta?: components["schemas"]["PaginationMeta"];
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["listUsers"];
         put?: never;
         /**
          * Tambah Karyawan Baru (Admin)
@@ -837,42 +283,7 @@ export interface paths {
          *     Hanya Admin (`owner` atau `hrd`) yang berhak memanggil endpoint ini.
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateUserRequest"];
-                };
-            };
-            responses: {
-                /** @description Karyawan berhasil ditambahkan */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserResponse"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                /** @description Email sudah terdaftar pada tenant ini */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["createUser"];
         delete?: never;
         options?: never;
         head?: never;
@@ -895,31 +306,7 @@ export interface paths {
          *     Field sensitif (gaji & rekening bank) hanya terlihat untuk peran `owner` dan `hrd`.
          *
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description ID Karyawan (UUID / String ID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Detail data karyawan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserResponse"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getUser"];
         put?: never;
         post?: never;
         delete?: never;
@@ -931,37 +318,7 @@ export interface paths {
          *     Hanya Admin (`owner` / `hrd`) yang dapat mengubah data sensitif.
          *
          */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description ID Karyawan (UUID / String ID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateUserRequest"];
-                };
-            };
-            responses: {
-                /** @description Data berhasil diperbarui */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserResponse"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        patch: operations["updateUser"];
         trace?: never;
     };
     "/users/{id}/deactivate": {
@@ -981,36 +338,7 @@ export interface paths {
          *     (maksimal 200 karakter) dan dicatat dalam audit log sistem.
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["DeactivateUserRequest"];
-                };
-            };
-            responses: {
-                /** @description Karyawan berhasil dinonaktifkan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserResponse"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["deactivateUser"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1032,31 +360,7 @@ export interface paths {
          * Aktifkan Kembali Karyawan
          * @description Mengubah kembali status karyawan nonaktif menjadi `aktif`.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Karyawan berhasil diaktifkan kembali */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserResponse"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        post: operations["reactivateUser"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1078,36 +382,7 @@ export interface paths {
          * Kirim Ulang Undangan Akun
          * @description Mengirimkan kembali email undangan aktivasi bagi karyawan yang berstatus `diundang`.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Undangan berhasil dikirim ulang */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @example true */
-                            success?: boolean;
-                            /** @example Email undangan berhasil dikirim ulang ke alamat tujuan. */
-                            message?: string;
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        post: operations["resendUserInvitation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1125,46 +400,13 @@ export interface paths {
          * Alias GET /users
          * @deprecated
          */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Filter status karyawan */
-                    status?: paths["/users"]["get"]["parameters"]["0"];
-                    /** @description Filter berdasarkan ID Departemen */
-                    department_id?: paths["/users"]["get"]["parameters"]["1"];
-                    /** @description Filter berdasarkan peran */
-                    role?: paths["/users"]["get"]["parameters"]["2"];
-                    /** @description Pencarian nama atau email */
-                    search?: paths["/users"]["get"]["parameters"]["3"];
-                    page?: paths["/users"]["get"]["parameters"]["4"];
-                    per_page?: paths["/users"]["get"]["parameters"]["5"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: paths["/users"]["get"]["responses"]["200"];
-            };
-        };
+        get: operations["listEmployeesAlias"];
         put?: never;
         /**
          * Alias POST /users
          * @deprecated
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: paths["/users"]["post"]["requestBody"];
-            responses: {
-                201: paths["/users"]["post"]["responses"]["201"];
-            };
-        };
+        post: operations["createEmployeeAlias"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1184,20 +426,7 @@ export interface paths {
          * Alias GET /users/{id}
          * @deprecated
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: paths["/users/{id}"]["get"]["responses"]["200"];
-            };
-        };
+        get: operations["getEmployeeAlias"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1207,20 +436,7 @@ export interface paths {
          * Alias PATCH /users/{id}
          * @deprecated
          */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: paths["/users/{id}"]["patch"]["requestBody"];
-            responses: {
-                200: paths["/users/{id}"]["patch"]["responses"]["200"];
-            };
-        };
+        patch: operations["updateEmployeeAlias"];
         trace?: never;
     };
     "/employees/{id}/deactivate": {
@@ -1238,20 +454,7 @@ export interface paths {
          * Alias POST /users/{id}/deactivate
          * @deprecated
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: paths["/users/{id}/deactivate"]["post"]["requestBody"];
-            responses: {
-                200: paths["/users/{id}/deactivate"]["post"]["responses"]["200"];
-            };
-        };
+        post: operations["deactivateEmployeeAlias"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1273,20 +476,7 @@ export interface paths {
          * Alias POST /users/{id}/reactivate
          * @deprecated
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: paths["/users/{id}/reactivate"]["post"]["responses"]["200"];
-            };
-        };
+        post: operations["reactivateEmployeeAlias"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1308,20 +498,7 @@ export interface paths {
          * Alias POST /users/{id}/invitation
          * @deprecated
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: paths["/users/{id}/invitation"]["post"]["responses"]["200"];
-            };
-        };
+        post: operations["resendEmployeeInvitationAlias"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1339,27 +516,7 @@ export interface paths {
          * Detail profil lengkap pengguna saat ini
          * @description Mengembalikan data lengkap pengguna termasuk relasi divisi, jabatan, jadwal, dan kantor (M21).
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Profil pengguna berhasil diambil */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserResponse"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["getMyProfile"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1379,27 +536,7 @@ export interface paths {
          * Jadwal dan koordinat kantor pengguna saat ini
          * @description Digunakan aplikasi mobile dan web untuk menampilkan titik kantor, radius geofence, dan jam kerja (M26, KW10).
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Data jadwal dan lokasi kantor pengguna berhasil diambil */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ScheduleLocation"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["getMyScheduleLocation"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1416,27 +553,7 @@ export interface paths {
             cookie?: never;
         };
         /** Preferensi akun pengguna */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Pengaturan pengguna */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserSettings"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["getMySettings"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1446,32 +563,7 @@ export interface paths {
          * Perbarui preferensi akun pengguna
          * @description Saat ini hanya toggle notifikasi push di Profil (M21).
          */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UserSettings"];
-                };
-            };
-            responses: {
-                /** @description Pengaturan berhasil diperbarui */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserSettings"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        patch: operations["updateMySettings"];
         trace?: never;
     };
     "/me/devices": {
@@ -1487,30 +579,7 @@ export interface paths {
          * Daftarkan perangkat untuk notifikasi push
          * @description Dipanggil aplikasi mobile setelah login. Token yang sama cukup diperbarui, tidak dobel.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RegisterDeviceRequest"];
-                };
-            };
-            responses: {
-                /** @description Perangkat terdaftar */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["UnauthorizedError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["registerMyDevice"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1525,65 +594,10 @@ export interface paths {
             cookie?: never;
         };
         /** Daftar jadwal kerja tenant */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Nomor halaman, mulai dari 1 */
-                    page?: components["parameters"]["PageQuery"];
-                    /** @description Jumlah item per halaman (maks. 100) */
-                    per_page?: components["parameters"]["PerPageQuery"];
-                    search?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Daftar jadwal kerja */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Schedule"][];
-                            meta: components["schemas"]["PaginationMeta"];
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["listSchedules"];
         put?: never;
         /** Tambah jadwal kerja baru (Admin/HRD/Owner) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateScheduleRequest"];
-                };
-            };
-            responses: {
-                /** @description Jadwal berhasil dibuat */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Schedule"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["createSchedule"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1600,98 +614,15 @@ export interface paths {
             cookie?: never;
         };
         /** Detail jadwal kerja */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Detail jadwal kerja */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Schedule"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getSchedule"];
         put?: never;
         post?: never;
         /** Hapus jadwal kerja */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Jadwal berhasil dihapus */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-                /** @description Jadwal masih digunakan oleh karyawan aktif (code SCHEDULE_IN_USE) */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        delete: operations["deleteSchedule"];
         options?: never;
         head?: never;
         /** Perbarui jadwal kerja (Admin/HRD/Owner) */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateScheduleRequest"];
-                };
-            };
-            responses: {
-                /** @description Jadwal berhasil diperbarui */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Schedule"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        patch: operations["updateSchedule"];
         trace?: never;
     };
     "/locations": {
@@ -1702,68 +633,13 @@ export interface paths {
             cookie?: never;
         };
         /** Daftar lokasi kantor tenant */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Nomor halaman, mulai dari 1 */
-                    page?: components["parameters"]["PageQuery"];
-                    /** @description Jumlah item per halaman (maks. 100) */
-                    per_page?: components["parameters"]["PerPageQuery"];
-                    search?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Daftar lokasi kantor */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Location"][];
-                            meta: components["schemas"]["PaginationMeta"];
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["listLocations"];
         put?: never;
         /**
          * Tambah lokasi kantor baru (Admin/HRD/Owner)
          * @description Radius lokasi wajib antara 25 sampai 500 meter.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateLocationRequest"];
-                };
-            };
-            responses: {
-                /** @description Lokasi berhasil dibuat */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Location"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["createLocation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1780,98 +656,15 @@ export interface paths {
             cookie?: never;
         };
         /** Detail lokasi kantor */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Detail lokasi kantor */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Location"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getLocation"];
         put?: never;
         post?: never;
         /** Hapus lokasi kantor */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Lokasi berhasil dihapus */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-                /** @description Lokasi masih digunakan oleh karyawan aktif (code LOCATION_IN_USE) */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        delete: operations["deleteLocation"];
         options?: never;
         head?: never;
         /** Perbarui lokasi kantor (Admin/HRD/Owner) */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateLocationRequest"];
-                };
-            };
-            responses: {
-                /** @description Lokasi berhasil diperbarui */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Location"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        patch: operations["updateLocation"];
         trace?: never;
     };
     "/attendance/today": {
@@ -1887,27 +680,7 @@ export interface paths {
          *     (M02, M08, M49, KW08). "Hari ini" dihitung di zona waktu tenant, bukan UTC.
          *
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Status absensi hari ini berhasil diambil */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AttendanceToday"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["getAttendanceToday"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1938,42 +711,7 @@ export interface paths {
          *     - Hanya 1 clock-in per hari kerja → 409 `ALREADY_CLOCKED_IN`.
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "multipart/form-data": components["schemas"]["ClockInRequest"];
-                };
-            };
-            responses: {
-                /** @description Clock-in berhasil dicatat */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ClockInResult"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                409: components["responses"]["ConflictError"];
-                /** @description GPS lemah, di luar radius, lokasi palsu, atau wajah tidak terdeteksi */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["GeofenceProblem"];
-                    };
-                };
-                429: components["responses"]["TooManyRequestsError"];
-            };
-        };
+        post: operations["clockIn"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1998,41 +736,7 @@ export interface paths {
          *     - Di luar radius → 422 `OUTSIDE_GEOFENCE`.
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ClockOutRequest"];
-                };
-            };
-            responses: {
-                /** @description Clock-out berhasil dicatat */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ClockOutResult"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                409: components["responses"]["ConflictError"];
-                /** @description Belum clock-in, catatan pulang cepat kosong, GPS lemah, atau di luar radius */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["GeofenceProblem"];
-                    };
-                };
-            };
-        };
+        post: operations["clockOut"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2050,37 +754,7 @@ export interface paths {
          * Daftar pengajuan lembur (W34)
          * @description Team Lead hanya melihat divisinya; HRD dan Owner melihat semua.
          */
-        get: {
-            parameters: {
-                query?: {
-                    status?: components["schemas"]["DecisionStatus"];
-                    /** @description Filter divisi/departemen; kosong = semua divisi */
-                    department_id?: components["parameters"]["DepartmentQuery"];
-                    date?: string;
-                    /** @description Nomor halaman, mulai dari 1 */
-                    page?: components["parameters"]["PageQuery"];
-                    /** @description Jumlah item per halaman (maks. 100) */
-                    per_page?: components["parameters"]["PerPageQuery"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Daftar pengajuan lembur dan jumlah per status tab */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["OvertimeRequestList"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-            };
-        };
+        get: operations["listOvertimeRequests"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2099,31 +773,7 @@ export interface paths {
             cookie?: never;
         };
         /** Detail pengajuan lembur (W94) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Detail pengajuan lembur */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["OvertimeRequestDetail"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getOvertimeRequest"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2144,40 +794,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Setujui pengajuan lembur (Team Lead divisinya, HRD, Owner) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Pengajuan lembur berhasil disetujui */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["OvertimeRequestDetail"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                /** @description Bukan atasan yang berwenang, atau menyetujui lembur sendiri */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                404: components["responses"]["NotFoundError"];
-                409: components["responses"]["ConflictError"];
-            };
-        };
+        post: operations["approveOvertimeRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2196,37 +813,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Tolak pengajuan lembur (Team Lead divisinya, HRD, Owner) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RejectRequest"];
-                };
-            };
-            responses: {
-                /** @description Pengajuan lembur berhasil ditolak */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["OvertimeRequestDetail"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-                409: components["responses"]["ConflictError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["rejectOvertimeRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2241,27 +828,7 @@ export interface paths {
             cookie?: never;
         };
         /** Kuota cuti tahunan pengguna saat ini */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Kuota cuti tahun berjalan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LeaveQuota"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["getMyLeaveQuota"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2281,36 +848,7 @@ export interface paths {
          * Daftar pengajuan izin/cuti pengguna sendiri (M16, KW17)
          * @description Terbaru di atas.
          */
-        get: {
-            parameters: {
-                query?: {
-                    status?: components["schemas"]["DecisionStatus"];
-                    /** @description Nomor halaman, mulai dari 1 */
-                    page?: components["parameters"]["PageQuery"];
-                    /** @description Jumlah item per halaman (maks. 100) */
-                    per_page?: components["parameters"]["PerPageQuery"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Daftar pengajuan izin dan cuti */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["LeaveRequest"][];
-                            meta: components["schemas"]["PaginationMeta"];
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["listMyLeaveRequests"];
         put?: never;
         /**
          * Ajukan izin, cuti tahunan, atau sakit (M05, KW18)
@@ -2323,32 +861,7 @@ export interface paths {
          *     - Dikirim ke atasan langsung (`manager_id`); bila kosong ke HRD.
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "multipart/form-data": components["schemas"]["CreateLeaveRequest"];
-                };
-            };
-            responses: {
-                /** @description Pengajuan berhasil dibuat */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LeaveRequest"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["createMyLeaveRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2365,30 +878,7 @@ export interface paths {
             cookie?: never;
         };
         /** Detail pengajuan izin/cuti (M41 "Lihat detail pengajuan") */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Detail pengajuan izin/cuti */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LeaveRequest"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getMyLeaveRequest"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2410,32 +900,7 @@ export interface paths {
          * Pratinjau perhitungan hari kerja dan cek kuota sebelum kirim
          * @description Tidak menyimpan apa pun. Dipakai untuk teks "3 hari kerja" dan peringatan kuota sebelum tombol Ajukan.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["LeavePreviewRequest"];
-                };
-            };
-            responses: {
-                /** @description Hasil pratinjau hari kerja dan kecukupan kuota */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LeavePreview"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["previewMyLeaveRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2459,29 +924,7 @@ export interface paths {
          *     pengajuan hilang dari daftar atasan. Perlu keputusan: hapus permanen atau simpan dengan status `dibatalkan`.
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Pengajuan dibatalkan */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["UnauthorizedError"];
-                404: components["responses"]["NotFoundError"];
-                409: components["responses"]["ConflictError"];
-            };
-        };
+        post: operations["cancelMyLeaveRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2499,36 +942,7 @@ export interface paths {
          * Daftar pengajuan izin/cuti untuk disetujui (W03)
          * @description Team Lead hanya melihat divisinya; HRD dan Owner melihat semua.
          */
-        get: {
-            parameters: {
-                query?: {
-                    status?: components["schemas"]["DecisionStatus"];
-                    /** @description Filter divisi/departemen; kosong = semua divisi */
-                    department_id?: components["parameters"]["DepartmentQuery"];
-                    /** @description Nomor halaman, mulai dari 1 */
-                    page?: components["parameters"]["PageQuery"];
-                    /** @description Jumlah item per halaman (maks. 100) */
-                    per_page?: components["parameters"]["PerPageQuery"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Daftar pengajuan dan jumlah per status tab */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LeaveApprovalList"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-            };
-        };
+        get: operations["listLeaveRequests"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2547,31 +961,7 @@ export interface paths {
             cookie?: never;
         };
         /** Detail pengajuan + dampak bila disetujui (W40) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Detail pengajuan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LeaveApprovalDetail"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getLeaveRequest"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2598,53 +988,7 @@ export interface paths {
          *     (FR-16, tidak dihitung alpha), lalu notifikasi `leave_approved` dikirim ke karyawan (FR-15).
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["ApproveLeaveRequest"];
-                };
-            };
-            responses: {
-                /** @description Pengajuan disetujui */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LeaveApprovalDetail"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                /** @description Bukan atasan yang berwenang, atau menyetujui pengajuan sendiri */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                404: components["responses"]["NotFoundError"];
-                409: components["responses"]["ConflictError"];
-                /** @description Kuota cuti tidak cukup lagi (`LEAVE_QUOTA_EXCEEDED`) */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        post: operations["approveLeaveRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2666,37 +1010,7 @@ export interface paths {
          * Tolak pengajuan dengan alasan wajib (W04, W42, W45, W43 · FR-14)
          * @description Kuota tidak berubah. Alasan dikirim ke karyawan lewat notifikasi `leave_rejected`.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RejectRequest"];
-                };
-            };
-            responses: {
-                /** @description Pengajuan ditolak */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LeaveApprovalDetail"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-                409: components["responses"]["ConflictError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["rejectLeaveRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2711,34 +1025,7 @@ export interface paths {
             cookie?: never;
         };
         /** Notifikasi pengguna, terbaru dulu (M20, KW25 · FR-15, FR-20) */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description true = hanya yang belum dibaca */
-                    unread?: boolean;
-                    /** @description Nomor halaman, mulai dari 1 */
-                    page?: components["parameters"]["PageQuery"];
-                    /** @description Jumlah item per halaman (maks. 100) */
-                    per_page?: components["parameters"]["PerPageQuery"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Daftar notifikasi */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["NotificationList"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["listMyNotifications"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2759,28 +1046,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Tandai satu notifikasi dibaca (saat item diketuk) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Ditandai dibaca */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["UnauthorizedError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        post: operations["markNotificationRead"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2797,25 +1063,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Tandai semua dibaca (M20 "Tandai semua dibaca") */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Semua ditandai dibaca */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        post: operations["markAllNotificationsRead"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2830,29 +1078,7 @@ export interface paths {
             cookie?: never;
         };
         /** Daftar klien untuk filter dan pilihan proyek (W06, W47, W48) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Daftar klien tenant */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Client"][];
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["listClients"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2869,60 +1095,10 @@ export interface paths {
             cookie?: never;
         };
         /** Daftar proyek beserta progres (W47) */
-        get: {
-            parameters: {
-                query?: {
-                    client_id?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Daftar proyek */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Project"][];
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["listProjects"];
         put?: never;
         /** Buat proyek (W48 · Owner, Team Lead) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateProjectRequest"];
-                };
-            };
-            responses: {
-                /** @description Proyek dibuat */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Project"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["createProject"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2940,36 +1116,7 @@ export interface paths {
          * Daftar task untuk Kanban dan tampilan daftar (W06, W46 · FR-19)
          * @description Karyawan hanya melihat task miliknya; Team Lead divisinya; Owner semua. `overdue` dihitung server.
          */
-        get: {
-            parameters: {
-                query?: {
-                    project_id?: string;
-                    client_id?: string;
-                    status?: components["schemas"]["TaskStatus"];
-                    assignee_id?: string;
-                    /** @description Nomor halaman, mulai dari 1 */
-                    page?: components["parameters"]["PageQuery"];
-                    /** @description Jumlah item per halaman (maks. 100) */
-                    per_page?: components["parameters"]["PerPageQuery"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Daftar task dan ringkasan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TaskList"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["listTasks"];
         put?: never;
         /**
          * Buat dan tugaskan task (W10, W49, W50 · FR-17, US-06)
@@ -2978,42 +1125,7 @@ export interface paths {
          *     Lampiran: PDF, JPG, PNG, AI, FIG; maks. 20 MB per file.
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "multipart/form-data": components["schemas"]["CreateTaskRequest"];
-                };
-            };
-            responses: {
-                /** @description Task dibuat di kolom To Do */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Task"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                /** @description Lampiran melebihi 20 MB */
-                413: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["createTask"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3028,29 +1140,7 @@ export interface paths {
             cookie?: never;
         };
         /** Task milik pengguna (M06, M22, KW21) */
-        get: {
-            parameters: {
-                query?: {
-                    status?: components["schemas"]["TaskStatus"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Task saya dan ringkasan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TaskList"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["listMyTasks"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3069,31 +1159,7 @@ export interface paths {
             cookie?: never;
         };
         /** Detail task + lampiran, komentar, kiriman hasil, revisi (M19, KW22, W51) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Detail task */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TaskDetail"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getTask"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3121,38 +1187,7 @@ export interface paths {
          * Ubah status oleh penanggung jawab, hanya To Do ↔ In Progress (M19, KW22)
          * @description Review hanya lewat kiriman hasil; Done hanya lewat persetujuan Team Lead → selain itu 422 `TASK_STATUS_NOT_ALLOWED`.
          */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        status: "todo" | "in_progress";
-                    };
-                };
-            };
-            responses: {
-                /** @description Status diubah */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TaskDetail"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        patch: operations["updateTaskStatus"];
         trace?: never;
     };
     "/tasks/{id}/submissions": {
@@ -3172,47 +1207,7 @@ export interface paths {
          *     task tidak dihitung overdue. Minimal satu file; tipe sama dengan lampiran task, maks. 20 MB per file.
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "multipart/form-data": {
-                        files: string[];
-                        note?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Terkirim ke Review */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TaskDetail"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                409: components["responses"]["ConflictError"];
-                /** @description File melebihi 20 MB */
-                413: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        post: operations["submitTaskResult"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3231,38 +1226,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Setujui hasil, pindah ke Done (W51, W52 · Team Lead / Owner) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** @description Komentar review, dikirim ke penanggung jawab */
-                        comment?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Task selesai */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TaskDetail"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                409: components["responses"]["ConflictError"];
-            };
-        };
+        post: operations["approveTask"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3284,40 +1248,7 @@ export interface paths {
          * Minta revisi, kembali ke In Progress (W53, M46)
          * @description Catatan wajib. Penanggung jawab menerima notifikasi `task_revision`. `due_at` opsional untuk tenggat baru.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        note: string;
-                        /** Format: date-time */
-                        due_at?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Revisi diminta */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TaskDetail"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                409: components["responses"]["ConflictError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["requestTaskRevision"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3339,36 +1270,7 @@ export interface paths {
          * Tambah komentar (M19, KW22)
          * @description Pihak lain di task menerima notifikasi `task_comment`.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        body: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Komentar ditambahkan */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TaskComment"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["addTaskComment"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3383,44 +1285,7 @@ export interface paths {
             cookie?: never;
         };
         /** Daftar profil komponen gaji per karyawan (W54) */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Nomor halaman, mulai dari 1 */
-                    page?: components["parameters"]["PageQuery"];
-                    /** @description Jumlah item per halaman (maks. 100) */
-                    per_page?: components["parameters"]["PerPageQuery"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Profil gaji + ringkasan kelengkapan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["SalaryProfileSummary"][];
-                            summary: {
-                                /** @example 16 */
-                                total: number;
-                                /** @example 14 */
-                                complete: number;
-                                /** @example 2 */
-                                incomplete: number;
-                            };
-                            meta: components["schemas"]["PaginationMeta"];
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-            };
-        };
+        get: operations["listSalaryProfiles"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3439,66 +1304,14 @@ export interface paths {
             cookie?: never;
         };
         /** Komponen gaji satu karyawan + pratinjau + log (W12) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Profil gaji */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SalaryProfile"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getSalaryProfile"];
         /**
          * Simpan komponen gaji (W57, W56 · US-09 AC-1)
          * @description Berlaku mulai payroll periode berikutnya yang belum Draft. Setiap perubahan dicatat di log
          *     (nilai lama, nilai baru, pengubah, waktu, alasan). Nilai negatif atau bukan angka → 422 (US-09 AC-2).
          *
          */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateSalaryProfileRequest"];
-                };
-            };
-            responses: {
-                /** @description Tersimpan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SalaryProfile"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        put: operations["updateSalaryProfile"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3514,59 +1327,462 @@ export interface paths {
             cookie?: never;
         };
         /** Aturan komponen global tenant (W58) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Aturan global */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PayrollRules"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-            };
-        };
+        get: operations["getPayrollRules"];
         /**
          * Simpan aturan global (W58)
          * @description Dicatat di audit log dan berlaku mulai payroll periode berikutnya.
          */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
+        put: operations["updatePayrollRules"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/runs/{period}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
             };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["PayrollRules"];
-                };
-            };
-            responses: {
-                /** @description Tersimpan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PayrollRules"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                422: components["responses"]["ValidationError"];
-            };
+            cookie?: never;
         };
+        /**
+         * Payroll satu periode + kesiapan data (W59, W07, W14, W65, W103)
+         * @description Bila belum digenerate, `status` = `belum` dan `lines` kosong; `readiness` tetap terisi.
+         */
+        get: operations["getPayrollRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/runs/{period}/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hitung payroll otomatis → Draft (W59, W60 · FR-23, US-10 AC-1)
+         * @description Dari rekap kehadiran, lembur disetujui, izin/cuti, dan komponen gaji (F10). Boleh diulang selama
+         *     Draft; penyesuaian manual dipertahankan dan dicatat ulang di audit log. Periode Diajukan/Disetujui → 409.
+         *
+         */
+        post: operations["generatePayrollRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/runs/{period}/lines/{employee_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+                employee_id: string;
+            };
+            cookie?: never;
+        };
+        /** Rincian gaji satu karyawan (W100) */
+        get: operations["getPayrollLine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/runs/{period}/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Penyesuaian manual dengan alasan wajib (W13, W61 · FR-24, US-10 AC-2) */
+        post: operations["createPayrollAdjustment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/runs/{period}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ajukan ke CEO (W63 · FR-25)
+         * @description Status jadi `diajukan`; CEO/Owner dinotifikasi; HRD tidak bisa mengubah nilai.
+         */
+        post: operations["submitPayrollRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/runs/{period}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Setujui & kunci (W64, W65 · US-10 AC-3; hanya CEO/Owner)
+         * @description Payroll terkunci, slip gaji diterbitkan, dan karyawan menerima notifikasi `payslip_published`.
+         */
+        post: operations["approvePayrollRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/runs/{period}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Kembalikan ke HRD dengan catatan wajib (W66, W103; hanya CEO/Owner) */
+        post: operations["returnPayrollRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/runs/{period}/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        /** Audit log payroll, tidak dapat diubah atau dihapus (W62 · US-10 AC-2) */
+        get: operations["getPayrollAuditLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/payslips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar slip gaji milik sendiri (M09, KW23 · FR-26, US-11 AC-2)
+         * @description Hanya slip pemilik token. Periode yang payroll-nya belum disetujui tampil `proses` tanpa nominal.
+         */
+        get: operations["listMyPayslips"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/payslips/{period}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        /** Rincian slip sendiri (M09, KW23) */
+        get: operations["getMyPayslip"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/payslips/{period}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Unduh slip PDF (M47, KW24 · US-11 AC-2)
+         * @description PDF dilindungi kata sandi tanggal lahir (DDMMYYYY). Setiap unduhan tercatat (`downloaded_at`).
+         */
+        get: operations["downloadMyPayslipPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/runs/{period}/payslips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Status pengiriman slip per karyawan (W67; HRD & CEO)
+         * @description Hanya status kirim, buka, dan unduh; isi slip tidak ikut dikirim.
+         */
+        get: operations["getPayslipDistribution"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/runs/{period}/payslips/{employee_id}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+                employee_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Kirim ulang notifikasi slip (W67 "Kirim ulang") */
+        post: operations["resendPayslip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/access-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Log akses modul payroll, 30 hari terakhir (W68 · US-11 AC-1) */
+        get: operations["listPayrollAccessLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/access-logs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        /** Detail satu entri log akses (W101) */
+        get: operations["getPayrollAccessLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ringkasan kehadiran, task, dan payroll (W69, W72 · FR-29, FR-30, US-08 AC-1)
+         * @description Owner/HRD menerima seluruh tenant + blok `payroll`. Team Lead hanya timnya sendiri dan
+         *     `payroll` selalu null (RBAC). Employee 403.
+         *
+         */
+        get: operations["getDashboardSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/attendance/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aktivitas clock-in terbaru dan titik peta geofence (W01) */
+        get: operations["getLiveAttendance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/attendance/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream update live (W02, Server-Sent Events)
+         * @description Setiap clock-in/izin baru dikirim sebagai event `attendance` berisi LiveAttendanceEvent.
+         */
+        get: operations["streamLiveAttendance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/attendance/not-checked-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Karyawan belum absen setelah batas toleransi (W70) */
+        get: operations["listNotCheckedIn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attendance/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Kirim ulang pengingat absen (W70 "Kirim pengingat lagi") */
+        post: operations["sendAttendanceReminder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/workload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Laporan beban kerja per karyawan (W11, W71 · FR-21) */
+        get: operations["getWorkloadReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{id}/assignee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Alihkan task ke anggota lain (W102)
+         * @description Penanggung jawab baru menerima notifikasi; perubahan tercatat di riwayat task.
+         */
+        put: operations["reassignTask"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3585,30 +1801,7 @@ export interface paths {
          * Riwayat absensi bulanan pengguna sendiri (M15, KW16)
          * @description Bulan tanpa catatan mengembalikan 200 dengan `days` kosong, bukan 404 (M57, KW28).
          */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Bulan dalam format YYYY-MM; default bulan berjalan di zona waktu tenant */
-                    month?: components["parameters"]["MonthQuery"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Riwayat harian satu bulan beserta ringkasan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["MonthlyAttendance"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
+        get: operations["getMyAttendanceHistory"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3627,30 +1820,7 @@ export interface paths {
             cookie?: never;
         };
         /** Detail absensi harian pengguna sendiri (M36) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    date: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Detail jam masuk, pulang, jarak, akurasi, perangkat, dan URL selfie bertanda tangan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AttendanceDayDetail"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getMyAttendanceDay"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3670,38 +1840,7 @@ export interface paths {
          * Rekapitulasi absensi per karyawan (W05)
          * @description Team Lead hanya divisinya; HRD dan Owner semua. Statistik dihitung untuk filter yang aktif.
          */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Bulan dalam format YYYY-MM; default bulan berjalan di zona waktu tenant */
-                    month?: components["parameters"]["MonthQuery"];
-                    /** @description Filter divisi/departemen; kosong = semua divisi */
-                    department_id?: components["parameters"]["DepartmentQuery"];
-                    today_status?: components["schemas"]["TodayStatus"];
-                    /** @description Nomor halaman, mulai dari 1 */
-                    page?: components["parameters"]["PageQuery"];
-                    /** @description Jumlah item per halaman (maks. 100) */
-                    per_page?: components["parameters"]["PerPageQuery"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Rekap kehadiran per karyawan dan 4 kartu statistik */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AttendanceRecap"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-            };
-        };
+        get: operations["getAttendanceRecap"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3720,34 +1859,7 @@ export interface paths {
             cookie?: never;
         };
         /** Riwayat bulanan absensi karyawan untuk admin (W37) */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Bulan dalam format YYYY-MM; default bulan berjalan di zona waktu tenant */
-                    month?: components["parameters"]["MonthQuery"];
-                };
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Riwayat bulanan absensi karyawan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["MonthlyAttendance"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getEmployeeAttendance"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3771,33 +1883,7 @@ export interface paths {
          *     `include_selfie` true. Setiap ekspor dicatat di audit log (siapa, kapan, periode, opsi).
          *
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateExportRequest"];
-                };
-            };
-            responses: {
-                /** @description Pembuatan dokumen PDF sedang diproses */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ExportJob"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-                422: components["responses"]["ValidationError"];
-            };
-        };
+        post: operations["createAttendanceRecapExport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3814,30 +1900,7 @@ export interface paths {
             cookie?: never;
         };
         /** Cek status pembuatan dan tautan unduhan dokumen PDF (W39, W98) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["IdPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Status ekspor PDF dan URL unduhan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ExportJob"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                404: components["responses"]["NotFoundError"];
-            };
-        };
+        get: operations["getAttendanceRecapExport"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4626,8 +2689,11 @@ export interface components {
             history?: components["schemas"]["LeaveHistoryEvent"][];
         };
         CreateLeaveRequest: {
-            /** @enum {string} */
-            type: "cuti" | "izin" | "sakit";
+            /**
+             * @description `wfh` (WFH / Dinas Luar) = USULAN frontend dari revisi Figma F06 (M38), perlu dikonfirmasi backend. Tidak memotong kuota cuti; disetujui Team Lead.
+             * @enum {string}
+             */
+            type: "cuti" | "izin" | "sakit" | "wfh";
             /**
              * Format: date
              * @example 2026-10-06
@@ -4648,7 +2714,7 @@ export interface components {
         };
         LeavePreviewRequest: {
             /** @enum {string} */
-            type: "cuti" | "izin" | "sakit";
+            type: "cuti" | "izin" | "sakit" | "wfh";
             /** Format: date */
             start_date: string;
             /** Format: date */
@@ -5143,6 +3209,215 @@ export interface components {
             default_ptkp: "TK/0" | "TK/1" | "TK/2" | "TK/3" | "K/0" | "K/1" | "K/2" | "K/3";
             auto_pph21: boolean;
         };
+        /** @enum {string} */
+        PayrollStatus: "belum" | "draft" | "diajukan" | "disetujui";
+        /** @enum {string} */
+        PayrollComponent: "base_salary" | "transport_allowance" | "overtime" | "project_bonus" | "bpjs_health" | "bpjs_employment" | "pph21" | "late" | "absent";
+        PayrollLine: {
+            employee: components["schemas"]["EmployeeRef"];
+            base_salary: components["schemas"]["MoneyAmount"];
+            allowance: components["schemas"]["MoneyAmount"];
+            overtime: components["schemas"]["MoneyAmount"];
+            deductions: components["schemas"]["MoneyAmount"];
+            net: components["schemas"]["MoneyAmount"];
+            /** @description Ada penyesuaian manual ("Disesuaikan HRD") */
+            adjusted: boolean;
+            /** @description Rincian W100 per komponen */
+            items: {
+                component: components["schemas"]["PayrollComponent"];
+                /** @example Lembur · 3 jam × 116.667 */
+                label: string;
+                amount: components["schemas"]["MoneyAmount"];
+                /** @enum {string} */
+                kind: "earning" | "deduction";
+            }[];
+        };
+        PayrollRun: {
+            period: string;
+            status: components["schemas"]["PayrollStatus"];
+            /** @description Cek kesiapan W59; `warning` tidak menghalangi generate */
+            readiness: {
+                /** @enum {string} */
+                key: "attendance" | "leave" | "salary_profiles" | "overtime" | "tax_rules";
+                /** @enum {string} */
+                state: "ok" | "warning";
+                /** @example 14 dari 16 profil lengkap · 2 belum lengkap */
+                detail: string;
+            }[];
+            summary: {
+                employees: number;
+                net_total: components["schemas"]["MoneyAmount"];
+                deduction_total: components["schemas"]["MoneyAmount"];
+                overtime_minutes: number;
+                overtime_total: components["schemas"]["MoneyAmount"];
+                adjustments: number;
+            };
+            lines: components["schemas"]["PayrollLine"][];
+            /** Format: date-time */
+            generated_at?: string | null;
+            /** Format: date-time */
+            submitted_at?: string | null;
+            submitted_by?: string | null;
+            /** Format: date-time */
+            approved_at?: string | null;
+            approved_by?: string | null;
+            /** @description Catatan CEO saat dikembalikan (W103) */
+            return_note?: {
+                note?: string;
+                by?: string;
+                /** Format: date-time */
+                at?: string;
+            } | null;
+        };
+        PayrollAdjustmentRequest: {
+            employee_id: string;
+            component: components["schemas"]["PayrollComponent"];
+            new_value: components["schemas"]["MoneyAmount"];
+            reason: string;
+        };
+        PayrollAuditEntry: {
+            id: string;
+            /** @enum {string} */
+            action: "generated" | "adjusted" | "submitted" | "returned" | "approved" | "components_updated";
+            /** @example Adjustment lembur · Made Nandana P. */
+            title?: string;
+            /** @example Rp 350 rb → 450 rb */
+            detail?: string;
+            reason?: string | null;
+            /** @example Sri Rahayu (HRD) */
+            actor: string;
+            /** Format: date-time */
+            at: string;
+        };
+        PayslipSummary: {
+            period: string;
+            /** @enum {string} */
+            status: "proses" | "dibayar";
+            /**
+             * @description Format sama dengan MoneyAmount; null selama status `proses` (payroll belum disetujui)
+             * @example 7845000.00
+             */
+            net?: string | null;
+        };
+        Payslip: {
+            period: string;
+            /** @enum {string} */
+            status: "proses" | "dibayar";
+            net: components["schemas"]["MoneyAmount"];
+            gross: components["schemas"]["MoneyAmount"];
+            deductions: components["schemas"]["MoneyAmount"];
+            items: {
+                /** @example Lembur (3 jam) */
+                label: string;
+                amount: components["schemas"]["MoneyAmount"];
+                /** @enum {string} */
+                kind: "earning" | "deduction";
+            }[];
+            /** Format: date */
+            paid_at?: string | null;
+            /** @example BCA •••• 4821 */
+            bank_account_masked?: string | null;
+            /** @example Ananda Sartana (CEO) */
+            approved_by?: string;
+            /** @example 2024-031 */
+            employee_number?: string;
+            /** @example Slip_Gaji_Sep2026.pdf */
+            file_name: string;
+            /** @example 131072 */
+            file_size_bytes?: number;
+        };
+        PayslipDistribution: {
+            /** Format: date-time */
+            issued_at: string;
+            summary: {
+                issued: number;
+                opened: number;
+                downloaded: number;
+                unopened: number;
+            };
+            data: {
+                employee: components["schemas"]["EmployeeRef"];
+                net: components["schemas"]["MoneyAmount"];
+                /** Format: date-time */
+                sent_at: string;
+                /** Format: date-time */
+                opened_at?: string | null;
+                /** Format: date-time */
+                downloaded_at?: string | null;
+            }[];
+        };
+        PayrollAccessLog: {
+            id: string;
+            user: components["schemas"]["EmployeeRef"];
+            /** @example Staff · Design */
+            role: string;
+            /** Format: date-time */
+            at: string;
+            /** @example /payroll */
+            path: string;
+            /** @example Chrome · macOS */
+            device: string;
+            /** @enum {string} */
+            result: "diizinkan" | "ditolak";
+            /**
+             * @description Terisi untuk akses ditolak; juga dikirim di ProblemDetails 403 (`code`)
+             * @example ACC-403-20261001-0917
+             */
+            incident_code?: string | null;
+        };
+        DashboardSummary: {
+            attendance: {
+                present: number;
+                late: number;
+                late_average_minutes: number;
+                on_leave: number;
+                not_checked_in: number;
+                total: number;
+            };
+            tasks: {
+                active: number;
+                overdue: number;
+                done_this_month: number;
+            };
+            /** @description Hanya owner & HRD. Selalu null untuk team_lead. */
+            payroll?: {
+                period?: string;
+                status?: components["schemas"]["PayrollStatus"];
+                total_cost?: components["schemas"]["MoneyAmount"];
+                /** Format: date-time */
+                submitted_at?: string | null;
+            } | null;
+            week: {
+                /** Format: date */
+                date: string;
+                present: number;
+                late: number;
+            }[];
+            attention: {
+                /** @enum {string} */
+                kind: "belum_absen" | "izin_menunggu" | "lembur_menunggu" | "profil_gaji_belum_lengkap" | "task_review";
+                count: number;
+            }[];
+        };
+        LiveAttendanceEvent: {
+            employee: components["schemas"]["EmployeeRef"];
+            /** @enum {string} */
+            status: "hadir" | "terlambat" | "wfh" | "sakit" | "izin" | "cuti";
+            /** Format: date-time */
+            at: string;
+            /** @example Kantor Sanur */
+            location_label?: string;
+            distance_meters?: number | null;
+        };
+        WorkloadItem: {
+            employee: components["schemas"]["EmployeeRef"];
+            total: number;
+            active: number;
+            overdue: number;
+            done: number;
+            utilization_percent: number;
+            worked_hours?: number;
+        };
     };
     responses: {
         /** @description Autentikasi gagal atau token tidak disertakan */
@@ -5210,6 +3485,8 @@ export interface components {
         IdPath: string;
         /** @description Bulan dalam format YYYY-MM; default bulan berjalan di zona waktu tenant */
         MonthQuery: string;
+        /** @description Periode payroll YYYY-MM */
+        PeriodPath: string;
         /** @description Filter divisi/departemen; kosong = semua divisi */
         DepartmentQuery: string;
     };
@@ -5218,4 +3495,3133 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Berhasil masuk */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description Kredensial tidak valid */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Format email atau kata sandi tidak memenuhi kriteria */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Akun terkunci karena percobaan gagal berulang */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    refreshToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    refresh_token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Token baru berhasil diterbitkan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthTokens"];
+                };
+            };
+            /** @description Refresh token tidak valid atau sudah kedaluwarsa */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Berhasil keluar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example true */
+                        success?: boolean;
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Profil pengguna aktif */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Permintaan diterima; email dikirim bila akun ada */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequestsError"];
+        };
+    };
+    resetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Kata sandi berhasil diubah (W22, KW06, M25) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Tautan reset kedaluwarsa atau sudah dipakai */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getRolePermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matriks hak akses */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolePermissions"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    setRolePermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RolePermissions"];
+            };
+        };
+        responses: {
+            /** @description Matriks tersimpan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolePermissions"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    listDepartments: {
+        parameters: {
+            query?: {
+                /** @description Filter pencarian nama departemen */
+                search?: string;
+                /** @description Nomor halaman */
+                page?: number;
+                /** @description Jumlah item per halaman (maks. 100) */
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar departemen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Department"][];
+                        meta?: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    createDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDepartmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Departemen berhasil dibuat */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            /** @description Departemen dengan nama tersebut sudah ada di tenant */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID Departemen (UUID) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detail departemen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    deleteDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID Departemen (UUID) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Departemen berhasil dihapus */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example true */
+                        success?: boolean;
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            /** @description Departemen tidak dapat dihapus karena masih digunakan */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updateDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID Departemen (UUID) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDepartmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Departemen berhasil diperbarui */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    listPositions: {
+        parameters: {
+            query?: {
+                /** @description Filter berdasarkan departemen */
+                department_id?: string;
+                /** @description Filter pencarian nama jabatan */
+                search?: string;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar jabatan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Position"][];
+                        meta?: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    createPosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePositionRequest"];
+            };
+        };
+        responses: {
+            /** @description Jabatan berhasil dibuat */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Position"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getPosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detail jabatan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Position"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    deletePosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Berhasil */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example true */
+                        success?: boolean;
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    updatePosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePositionRequest"];
+            };
+        };
+        responses: {
+            /** @description Berhasil */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Position"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    listUsers: {
+        parameters: {
+            query?: {
+                /** @description Filter status karyawan */
+                status?: "aktif" | "nonaktif" | "diundang";
+                /** @description Filter berdasarkan ID Departemen */
+                department_id?: string;
+                /** @description Filter berdasarkan peran */
+                role?: "owner" | "hrd" | "team_lead" | "employee" | "cashier";
+                /** @description Pencarian nama atau email */
+                search?: string;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar data karyawan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["UserResponse"][];
+                        meta?: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    createUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUserRequest"];
+            };
+        };
+        responses: {
+            /** @description Karyawan berhasil ditambahkan */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            /** @description Email sudah terdaftar pada tenant ini */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID Karyawan (UUID / String ID) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detail data karyawan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    updateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID Karyawan (UUID / String ID) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserRequest"];
+            };
+        };
+        responses: {
+            /** @description Data berhasil diperbarui */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    deactivateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeactivateUserRequest"];
+            };
+        };
+        responses: {
+            /** @description Karyawan berhasil dinonaktifkan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    reactivateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Karyawan berhasil diaktifkan kembali */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    resendUserInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Undangan berhasil dikirim ulang */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example true */
+                        success?: boolean;
+                        /** @example Email undangan berhasil dikirim ulang ke alamat tujuan. */
+                        message?: string;
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    listEmployeesAlias: {
+        parameters: {
+            query?: {
+                /** @description Filter status karyawan */
+                status?: paths["/users"]["get"]["parameters"]["0"];
+                /** @description Filter berdasarkan ID Departemen */
+                department_id?: paths["/users"]["get"]["parameters"]["1"];
+                /** @description Filter berdasarkan peran */
+                role?: paths["/users"]["get"]["parameters"]["2"];
+                /** @description Pencarian nama atau email */
+                search?: paths["/users"]["get"]["parameters"]["3"];
+                page?: paths["/users"]["get"]["parameters"]["4"];
+                per_page?: paths["/users"]["get"]["parameters"]["5"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: paths["/users"]["get"]["responses"]["200"];
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    createEmployeeAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: paths["/users"]["post"]["requestBody"];
+        responses: {
+            201: paths["/users"]["post"]["responses"]["201"];
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    getEmployeeAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: paths["/users/{id}"]["get"]["responses"]["200"];
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    updateEmployeeAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: paths["/users/{id}"]["patch"]["requestBody"];
+        responses: {
+            200: paths["/users/{id}"]["patch"]["responses"]["200"];
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    deactivateEmployeeAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: paths["/users/{id}/deactivate"]["post"]["requestBody"];
+        responses: {
+            200: paths["/users/{id}/deactivate"]["post"]["responses"]["200"];
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    reactivateEmployeeAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: paths["/users/{id}/reactivate"]["post"]["responses"]["200"];
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    resendEmployeeInvitationAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: paths["/users/{id}/invitation"]["post"]["responses"]["200"];
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    getMyProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Profil pengguna berhasil diambil */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    getMyScheduleLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Data jadwal dan lokasi kantor pengguna berhasil diambil */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleLocation"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    getMySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pengaturan pengguna */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSettings"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    updateMySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserSettings"];
+            };
+        };
+        responses: {
+            /** @description Pengaturan berhasil diperbarui */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSettings"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    registerMyDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterDeviceRequest"];
+            };
+        };
+        responses: {
+            /** @description Perangkat terdaftar */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["UnauthorizedError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    listSchedules: {
+        parameters: {
+            query?: {
+                /** @description Nomor halaman, mulai dari 1 */
+                page?: components["parameters"]["PageQuery"];
+                /** @description Jumlah item per halaman (maks. 100) */
+                per_page?: components["parameters"]["PerPageQuery"];
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar jadwal kerja */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Schedule"][];
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    createSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateScheduleRequest"];
+            };
+        };
+        responses: {
+            /** @description Jadwal berhasil dibuat */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Schedule"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detail jadwal kerja */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Schedule"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    deleteSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jadwal berhasil dihapus */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            /** @description Jadwal masih digunakan oleh karyawan aktif (code SCHEDULE_IN_USE) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updateSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateScheduleRequest"];
+            };
+        };
+        responses: {
+            /** @description Jadwal berhasil diperbarui */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Schedule"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    listLocations: {
+        parameters: {
+            query?: {
+                /** @description Nomor halaman, mulai dari 1 */
+                page?: components["parameters"]["PageQuery"];
+                /** @description Jumlah item per halaman (maks. 100) */
+                per_page?: components["parameters"]["PerPageQuery"];
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar lokasi kantor */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Location"][];
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    createLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLocationRequest"];
+            };
+        };
+        responses: {
+            /** @description Lokasi berhasil dibuat */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Location"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detail lokasi kantor */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Location"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    deleteLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lokasi berhasil dihapus */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            /** @description Lokasi masih digunakan oleh karyawan aktif (code LOCATION_IN_USE) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updateLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLocationRequest"];
+            };
+        };
+        responses: {
+            /** @description Lokasi berhasil diperbarui */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Location"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getAttendanceToday: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status absensi hari ini berhasil diambil */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceToday"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    clockIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ClockInRequest"];
+            };
+        };
+        responses: {
+            /** @description Clock-in berhasil dicatat */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClockInResult"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            409: components["responses"]["ConflictError"];
+            /** @description GPS lemah, di luar radius, lokasi palsu, atau wajah tidak terdeteksi */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["GeofenceProblem"];
+                };
+            };
+            429: components["responses"]["TooManyRequestsError"];
+        };
+    };
+    clockOut: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClockOutRequest"];
+            };
+        };
+        responses: {
+            /** @description Clock-out berhasil dicatat */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClockOutResult"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            409: components["responses"]["ConflictError"];
+            /** @description Belum clock-in, catatan pulang cepat kosong, GPS lemah, atau di luar radius */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["GeofenceProblem"];
+                };
+            };
+        };
+    };
+    listOvertimeRequests: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["DecisionStatus"];
+                /** @description Filter divisi/departemen; kosong = semua divisi */
+                department_id?: components["parameters"]["DepartmentQuery"];
+                date?: string;
+                /** @description Nomor halaman, mulai dari 1 */
+                page?: components["parameters"]["PageQuery"];
+                /** @description Jumlah item per halaman (maks. 100) */
+                per_page?: components["parameters"]["PerPageQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar pengajuan lembur dan jumlah per status tab */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertimeRequestList"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    getOvertimeRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detail pengajuan lembur */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertimeRequestDetail"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    approveOvertimeRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pengajuan lembur berhasil disetujui */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertimeRequestDetail"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            /** @description Bukan atasan yang berwenang, atau menyetujui lembur sendiri */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            404: components["responses"]["NotFoundError"];
+            409: components["responses"]["ConflictError"];
+        };
+    };
+    rejectOvertimeRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectRequest"];
+            };
+        };
+        responses: {
+            /** @description Pengajuan lembur berhasil ditolak */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertimeRequestDetail"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            409: components["responses"]["ConflictError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getMyLeaveQuota: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kuota cuti tahun berjalan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveQuota"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    listMyLeaveRequests: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["DecisionStatus"];
+                /** @description Nomor halaman, mulai dari 1 */
+                page?: components["parameters"]["PageQuery"];
+                /** @description Jumlah item per halaman (maks. 100) */
+                per_page?: components["parameters"]["PerPageQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar pengajuan izin dan cuti */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LeaveRequest"][];
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    createMyLeaveRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["CreateLeaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Pengajuan berhasil dibuat */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequest"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getMyLeaveRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detail pengajuan izin/cuti */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequest"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    previewMyLeaveRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeavePreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Hasil pratinjau hari kerja dan kecukupan kuota */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeavePreview"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    cancelMyLeaveRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pengajuan dibatalkan */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+            409: components["responses"]["ConflictError"];
+        };
+    };
+    listLeaveRequests: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["DecisionStatus"];
+                /** @description Filter divisi/departemen; kosong = semua divisi */
+                department_id?: components["parameters"]["DepartmentQuery"];
+                /** @description Nomor halaman, mulai dari 1 */
+                page?: components["parameters"]["PageQuery"];
+                /** @description Jumlah item per halaman (maks. 100) */
+                per_page?: components["parameters"]["PerPageQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar pengajuan dan jumlah per status tab */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveApprovalList"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    getLeaveRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detail pengajuan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveApprovalDetail"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    approveLeaveRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ApproveLeaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Pengajuan disetujui */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveApprovalDetail"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            /** @description Bukan atasan yang berwenang, atau menyetujui pengajuan sendiri */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            404: components["responses"]["NotFoundError"];
+            409: components["responses"]["ConflictError"];
+            /** @description Kuota cuti tidak cukup lagi (`LEAVE_QUOTA_EXCEEDED`) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    rejectLeaveRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectRequest"];
+            };
+        };
+        responses: {
+            /** @description Pengajuan ditolak */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveApprovalDetail"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+            409: components["responses"]["ConflictError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    listMyNotifications: {
+        parameters: {
+            query?: {
+                /** @description true = hanya yang belum dibaca */
+                unread?: boolean;
+                /** @description Nomor halaman, mulai dari 1 */
+                page?: components["parameters"]["PageQuery"];
+                /** @description Jumlah item per halaman (maks. 100) */
+                per_page?: components["parameters"]["PerPageQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar notifikasi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationList"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    markNotificationRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ditandai dibaca */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    markAllNotificationsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Semua ditandai dibaca */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    listClients: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar klien tenant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Client"][];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    listProjects: {
+        parameters: {
+            query?: {
+                client_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar proyek */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Project"][];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    createProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Proyek dibuat */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    listTasks: {
+        parameters: {
+            query?: {
+                project_id?: string;
+                client_id?: string;
+                status?: components["schemas"]["TaskStatus"];
+                assignee_id?: string;
+                /** @description Nomor halaman, mulai dari 1 */
+                page?: components["parameters"]["PageQuery"];
+                /** @description Jumlah item per halaman (maks. 100) */
+                per_page?: components["parameters"]["PerPageQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar task dan ringkasan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskList"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    createTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["CreateTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description Task dibuat di kolom To Do */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            /** @description Lampiran melebihi 20 MB */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    listMyTasks: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["TaskStatus"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Task saya dan ringkasan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskList"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    getTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detail task */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetail"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    updateTaskStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    status: "todo" | "in_progress";
+                };
+            };
+        };
+        responses: {
+            /** @description Status diubah */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetail"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    submitTaskResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    files: string[];
+                    note?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Terkirim ke Review */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetail"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            409: components["responses"]["ConflictError"];
+            /** @description File melebihi 20 MB */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    approveTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Komentar review, dikirim ke penanggung jawab */
+                    comment?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Task selesai */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetail"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            409: components["responses"]["ConflictError"];
+        };
+    };
+    requestTaskRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    note: string;
+                    /** Format: date-time */
+                    due_at?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Revisi diminta */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetail"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            409: components["responses"]["ConflictError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    addTaskComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    body: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Komentar ditambahkan */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskComment"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    listSalaryProfiles: {
+        parameters: {
+            query?: {
+                /** @description Nomor halaman, mulai dari 1 */
+                page?: components["parameters"]["PageQuery"];
+                /** @description Jumlah item per halaman (maks. 100) */
+                per_page?: components["parameters"]["PerPageQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Profil gaji + ringkasan kelengkapan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SalaryProfileSummary"][];
+                        summary: {
+                            /** @example 16 */
+                            total: number;
+                            /** @example 14 */
+                            complete: number;
+                            /** @example 2 */
+                            incomplete: number;
+                        };
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    getSalaryProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Profil gaji */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalaryProfile"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    updateSalaryProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSalaryProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Tersimpan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalaryProfile"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getPayrollRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aturan global */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRules"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    updatePayrollRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayrollRules"];
+            };
+        };
+        responses: {
+            /** @description Tersimpan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRules"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getPayrollRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payroll periode */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRun"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    generatePayrollRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payroll Draft */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRun"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            409: components["responses"]["ConflictError"];
+        };
+    };
+    getPayrollLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+                employee_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rincian */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollLine"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    createPayrollAdjustment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayrollAdjustmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Tersimpan dan tercatat di audit log */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRun"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            409: components["responses"]["ConflictError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    submitPayrollRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Diajukan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRun"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            409: components["responses"]["ConflictError"];
+        };
+    };
+    approvePayrollRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Harus true ("Saya sudah meninjau rincian & penyesuaian manual") */
+                    reviewed: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Disetujui dan terkunci */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRun"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            409: components["responses"]["ConflictError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    returnPayrollRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    note: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Kembali ke Draft */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRun"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            409: components["responses"]["ConflictError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getPayrollAuditLog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entri terbaru di atas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PayrollAuditEntry"][];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    listMyPayslips: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Slip terbaru di atas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PayslipSummary"][];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    getMyPayslip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rincian slip */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payslip"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            /** @description Slip belum terbit (M48) atau bukan milik pengguna */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    downloadMyPayslipPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File PDF */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    getPayslipDistribution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status distribusi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayslipDistribution"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    resendPayslip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Periode payroll YYYY-MM */
+                period: components["parameters"]["PeriodPath"];
+                employee_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Notifikasi dijadwalkan ulang */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            429: components["responses"]["TooManyRequestsError"];
+        };
+    };
+    listPayrollAccessLogs: {
+        parameters: {
+            query?: {
+                result?: "diizinkan" | "ditolak";
+                /** @description Nomor halaman, mulai dari 1 */
+                page?: components["parameters"]["PageQuery"];
+                /** @description Jumlah item per halaman (maks. 100) */
+                per_page?: components["parameters"]["PerPageQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Log akses + ringkasan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PayrollAccessLog"][];
+                        summary: {
+                            diizinkan: number;
+                            ditolak: number;
+                            denied_users: number;
+                            payslips_opened: number;
+                            exports: number;
+                        };
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    getPayrollAccessLog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollAccessLog"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    getDashboardSummary: {
+        parameters: {
+            query?: {
+                range?: "hari" | "minggu" | "bulan";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ringkasan dashboard */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardSummary"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    getLiveAttendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Snapshot live */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: date-time */
+                        updated_at: string;
+                        activities: components["schemas"]["LiveAttendanceEvent"][];
+                        pins: {
+                            employee: components["schemas"]["EmployeeRef"];
+                            /** @enum {string} */
+                            status: "hadir" | "terlambat" | "luar_area";
+                            latitude: number;
+                            longitude: number;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    streamLiveAttendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stream SSE */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    listNotCheckedIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar belum absen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            employee: components["schemas"]["EmployeeRef"];
+                            /** @example Reguler 09.00–17.00 */
+                            schedule: string;
+                            /** Format: date-time */
+                            last_active_at?: string | null;
+                            /** Format: date-time */
+                            reminder_sent_at: string | null;
+                            leave_today?: boolean;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    sendAttendanceReminder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    employee_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Pengingat dijadwalkan */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            429: components["responses"]["TooManyRequestsError"];
+        };
+    };
+    getWorkloadReport: {
+        parameters: {
+            query: {
+                period: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Beban kerja */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        summary: {
+                            active: number;
+                            overdue: number;
+                            done: number;
+                            team_utilization_percent: number;
+                        };
+                        data: components["schemas"]["WorkloadItem"][];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    reassignTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    assignee_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Task setelah dialihkan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            /** @description Task sudah selesai atau anggota bukan bagian tim */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getMyAttendanceHistory: {
+        parameters: {
+            query?: {
+                /** @description Bulan dalam format YYYY-MM; default bulan berjalan di zona waktu tenant */
+                month?: components["parameters"]["MonthQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Riwayat harian satu bulan beserta ringkasan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyAttendance"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    getMyAttendanceDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detail jam masuk, pulang, jarak, akurasi, perangkat, dan URL selfie bertanda tangan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceDayDetail"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    getAttendanceRecap: {
+        parameters: {
+            query?: {
+                /** @description Bulan dalam format YYYY-MM; default bulan berjalan di zona waktu tenant */
+                month?: components["parameters"]["MonthQuery"];
+                /** @description Filter divisi/departemen; kosong = semua divisi */
+                department_id?: components["parameters"]["DepartmentQuery"];
+                today_status?: components["schemas"]["TodayStatus"];
+                /** @description Nomor halaman, mulai dari 1 */
+                page?: components["parameters"]["PageQuery"];
+                /** @description Jumlah item per halaman (maks. 100) */
+                per_page?: components["parameters"]["PerPageQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rekap kehadiran per karyawan dan 4 kartu statistik */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceRecap"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    getEmployeeAttendance: {
+        parameters: {
+            query?: {
+                /** @description Bulan dalam format YYYY-MM; default bulan berjalan di zona waktu tenant */
+                month?: components["parameters"]["MonthQuery"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Riwayat bulanan absensi karyawan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyAttendance"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    createAttendanceRecapExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Pembuatan dokumen PDF sedang diproses */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportJob"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
+    getAttendanceRecapExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status ekspor PDF dan URL unduhan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportJob"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+}

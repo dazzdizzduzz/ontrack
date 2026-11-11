@@ -1,4 +1,11 @@
-import { formatPeriod, sampleAttendance, sampleDefaultPeriod, summarize } from '@on-track/core';
+import {
+  formatPeriod,
+  latestPaidPayslip,
+  sampleAttendance,
+  sampleDefaultPeriod,
+  samplePayslips,
+  summarize,
+} from '@on-track/core';
 import { color, radius, space } from '@on-track/tokens';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -18,7 +25,7 @@ const sampleProfile = {
   position: 'Lead Graphic Designer',
   division: 'Design',
   email: 'daze@studiotigapagi.com',
-  lastPayslip: 'September 2026',
+  lastPayslip: latestPaidPayslip(samplePayslips)?.label ?? '—',
   version: 'On-Track v1.0 · Studio Tigapagi',
 };
 
@@ -40,8 +47,13 @@ const menu: MenuItem[] = [
     description: `${historyMonth}: ${history.hadir} hadir · ${history.terlambat} terlambat`,
     onPress: () => router.push('/riwayat'),
   },
-  // MOCK: slip gaji (F12), ubah kata sandi, dan privasi belum dibuat.
-  { icon: 'wallet', title: 'Slip gaji', description: `Terakhir: ${sampleProfile.lastPayslip}` },
+  {
+    icon: 'wallet',
+    title: 'Slip gaji',
+    description: `Terakhir: ${sampleProfile.lastPayslip}`,
+    onPress: () => router.push('/slip-gaji'),
+  },
+  // MOCK: ubah kata sandi dan privasi belum dibuat.
   {
     icon: 'calendar',
     title: 'Izin & cuti',

@@ -138,7 +138,7 @@ export function PayrollRulesPage() {
           <div className={styles.fields}>
             <TextField
               label="Kesehatan (karyawan)"
-              helper="dari gaji pokok + tunjangan tetap"
+              helper="dari gaji pokok"
               error={'error' in health ? health.error : undefined}
               inputMode="decimal"
               value={texts.bpjsHealthPercent}
