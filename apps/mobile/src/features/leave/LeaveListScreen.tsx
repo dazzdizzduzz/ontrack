@@ -6,8 +6,10 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Alert } from '@/components/ui/Alert';
 import { BottomNav } from '@/components/ui/BottomNav';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { mainTabs } from '@/components/ui/mainTabs';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { TopAppBar } from '@/components/ui/TopAppBar';
 import { textStyle } from '@/theme/text';
 import { LeaveCard, QuotaCard } from './LeaveParts';
@@ -26,11 +28,17 @@ const previewPending = sampleLeaveDetails.menunggu;
 
 /**
  * M16 · Izin Saya: kuota cuti, filter status, dan daftar pengajuan. Ketuk kartu membuka M59 (menu
- * pengajuan). Pratinjau `?state=menu` menampilkan M59 untuk cuti yang masih menunggu.
+ * pengajuan). Pratinjau `?state=`: `menu` (M59), `kosong` (M62), dan `memuat` (M63). MOCK: data
+ * contoh langsung tersedia; saat integrasi, skeleton tampil bila permintaan lebih dari 1 detik.
  */
 export function LeaveListScreen() {
   const { state } = useLocalSearchParams<{ state?: string }>();
-  const { requests, quota, cancel } = useLeave();
+  const leave = useLeave();
+  const { cancel } = leave;
+  const empty = state === 'kosong';
+  const loading = state === 'memuat';
+  const requests = empty || loading ? [] : leave.requests;
+  const quota = empty ? { ...leave.quota, used: 0, pending: 0 } : leave.quota;
   const [filter, setFilter] = useState<LeaveStatus | null>(null);
   // Parameter rute bisa baru terbaca setelah render pertama, jadi pratinjau dihitung, bukan nilai awal state.
   const [menuId, setMenuId] = useState<string | null | 'auto'>('auto');
@@ -71,6 +79,14 @@ export function LeaveListScreen() {
             );
           })}
         </ScrollView>
+        {loading &&
+          [0, 1, 2].map((index) => (
+            <View key={index} style={styles.skeletonCard}>
+              <Skeleton width="40%" />
+              <Skeleton width="65%" />
+              <Skeleton width="85%" />
+            </View>
+          ))}
         {visible.map((request) => (
           <LeaveCard
             key={request.id}
@@ -78,7 +94,14 @@ export function LeaveListScreen() {
             onPress={() => setMenuId(request.id)}
           />
         ))}
-        {visible.length === 0 && <Text style={styles.empty}>Belum ada pengajuan dengan status ini.</Text>}
+        {!loading && requests.length === 0 && (
+          <EmptyState icon="calendar" title="Belum ada pengajuan">
+            Ajukan cuti, izin, sakit, atau WFH lewat tombol di bawah. Statusnya akan muncul di sini.
+          </EmptyState>
+        )}
+        {!loading && requests.length > 0 && visible.length === 0 && (
+          <Text style={styles.empty}>Belum ada pengajuan dengan status ini.</Text>
+        )}
       </ScrollView>
       <View style={styles.footer}>
         <Button fullWidth label="Ajukan izin baru" icon="plus-inverse" onPress={() => router.push('/izin/ajukan')} />
@@ -134,6 +157,14 @@ const styles = StyleSheet.create({
   },
   chipLabelSelected: {
     color: color.text.inverse,
+  },
+  skeletonCard: {
+    gap: space[12],
+    padding: space[16],
+    borderWidth: 1,
+    borderColor: color.border.default,
+    borderRadius: radius.lg,
+    backgroundColor: color.bg.surface,
   },
   empty: {
     ...textStyle('bodyS'),

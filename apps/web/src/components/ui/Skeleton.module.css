@@ -1,0 +1,26 @@
+/* Skeleton: token border/default, radius full. Dipakai bila data dimuat lebih dari 1 detik. */
+.bar {
+  display: block;
+  height: 12px;
+  border-radius: var(--radius-full);
+  background: var(--color-border-default);
+}
+
+.circle {
+  display: block;
+  border-radius: var(--radius-full);
+  background: var(--color-border-default);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bar,
+  .circle {
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.55;
+  }
+}

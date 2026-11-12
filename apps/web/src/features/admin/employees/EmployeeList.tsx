@@ -8,8 +8,10 @@ import { Badge } from '@/components/ui/Badge';
 import { ActionMenu, type ActionMenuItem } from '@/components/ui/ActionMenu';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { ChipButton } from '@/components/ui/Chip';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { SearchField } from '@/components/ui/Field';
 import { IconLink } from '@/components/ui/IconButton';
+import { Skeleton, SkeletonCircle } from '@/components/ui/Skeleton';
 import { Toast } from '@/components/ui/Toast';
 import {
   ACTIVE_NOT_LISTED,
@@ -23,10 +25,18 @@ import { EmployeeSubNav } from './EmployeeSubNav';
 import { useEmployees } from './EmployeesProvider';
 import styles from './employees.module.css';
 
+export type EmployeeListPreview = 'cari-kosong' | 'memuat';
+
 type EmployeeListProps = {
   /** W30: email karyawan yang baru ditambahkan. */
   addedEmail?: string;
+  /** W104 pencarian tidak ditemukan, W107 memuat data. */
+  preview?: EmployeeListPreview;
 };
+
+/** Kata kunci contoh W104. */
+const sampleNoMatchQuery = 'desainer 3D';
+const SKELETON_ROWS = 6;
 
 /** W81: karyawan nonaktif tidak punya aksi Nonaktifkan; aktifkan kembali ada di W90. */
 function menuItems(row: Employee): ActionMenuItem[] {
@@ -45,10 +55,15 @@ function menuItems(row: Employee): ActionMenuItem[] {
   return items;
 }
 
-/** W15 · Karyawan, W30 · Berhasil Ditambahkan, W81 · Menu Aksi */
-export function EmployeeList({ addedEmail }: EmployeeListProps) {
+/**
+ * W15 · Karyawan, W30 · Berhasil Ditambahkan, W81 · Menu Aksi, W104 · Pencarian Tidak Ditemukan,
+ * W107 · Memuat Data. MOCK: data contoh langsung tersedia, jadi skeleton hanya lewat `?state=memuat`;
+ * saat integrasi, skeleton tampil bila permintaan lebih dari 1 detik.
+ */
+export function EmployeeList({ addedEmail, preview }: EmployeeListProps) {
   const { employees } = useEmployees();
-  const [query, setQuery] = useState('');
+  const loading = preview === 'memuat';
+  const [query, setQuery] = useState(preview === 'cari-kosong' ? sampleNoMatchQuery : '');
   const [division, setDivision] = useState<string | null>(null);
   const [toastOpen, setToastOpen] = useState(Boolean(addedEmail));
 
@@ -78,7 +93,7 @@ export function EmployeeList({ addedEmail }: EmployeeListProps) {
         <div className={styles.titleBlock}>
           <h1 className={styles.title}>Karyawan</h1>
           <p className={styles.subtitle}>
-            {active} aktif · {inactive} nonaktif · Studio Tigapagi
+            {loading ? 'Memuat data karyawan…' : `${active} aktif · ${inactive} nonaktif · Studio Tigapagi`}
           </p>
         </div>
         <ButtonLink compact href="/data-karyawan/tambah">
@@ -120,7 +135,7 @@ export function EmployeeList({ addedEmail }: EmployeeListProps) {
 
       <div className={styles.tableWrap}>
         <div className={styles.tableScroll}>
-        <table className={styles.table}>
+        <table className={styles.table} aria-busy={loading}>
           <thead>
             <tr>
               <th scope="col">Karyawan</th>
@@ -145,7 +160,39 @@ export function EmployeeList({ addedEmail }: EmployeeListProps) {
             </tr>
           </thead>
           <tbody>
-            {visible.map((row) => {
+            {loading &&
+              Array.from({ length: SKELETON_ROWS }, (_, index) => (
+                <tr key={`memuat-${index}`}>
+                  <td>
+                    <div className={styles.person}>
+                      <SkeletonCircle />
+                      <div className={styles.personText}>
+                        <Skeleton width={140} />
+                        <Skeleton width={100} height={10} />
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <Skeleton width={120} />
+                  </td>
+                  <td>
+                    <Skeleton width={72} />
+                  </td>
+                  <td>
+                    <Skeleton width={72} />
+                  </td>
+                  <td>
+                    <Skeleton width={72} />
+                  </td>
+                  <td>
+                    <Skeleton width={72} />
+                  </td>
+                  <td className={styles.colActions}>
+                    <Skeleton width={40} />
+                  </td>
+                </tr>
+              ))}
+            {!loading && visible.map((row) => {
               const badge = statusBadges[row.status];
               const inactive = row.status === 'nonaktif';
               return (
@@ -181,17 +228,37 @@ export function EmployeeList({ addedEmail }: EmployeeListProps) {
                 </tr>
               );
             })}
-            {visible.length === 0 && (
+            {!loading && visible.length === 0 && (
               <tr>
-                <td colSpan={7} className={styles.empty}>
-                  Tidak ada karyawan yang cocok.
+                <td colSpan={7} className={styles.emptyCell}>
+                  <EmptyState
+                    icon="search"
+                    title="Tidak ada karyawan yang cocok"
+                    action={
+                      <Button
+                        variant="secondary"
+                        compact
+                        onClick={() => {
+                          setQuery('');
+                          setDivision(null);
+                        }}
+                      >
+                        Hapus pencarian
+                        <Image src="/icons/arrow-right.svg" alt="" width={20} height={20} unoptimized />
+                      </Button>
+                    }
+                  >
+                    {keyword
+                      ? `Tidak ada hasil untuk "${query.trim()}". Coba kata kunci lain atau hapus filter divisi.`
+                      : `Belum ada karyawan di divisi ${division}.`}
+                  </EmptyState>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
         </div>
-        {visible.length > 0 && (
+        {!loading && visible.length > 0 && (
           <div className={styles.pagination}>
             <p className={styles.paginationText}>
               Menampilkan 1–{visible.length} dari {total} karyawan

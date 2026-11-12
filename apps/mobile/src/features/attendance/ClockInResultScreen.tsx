@@ -40,7 +40,8 @@ export function ClockInResultScreen({ preview }: { preview?: 'terlambat' | 'terl
         { label: 'Lokasi', value: sampleOffice.name },
         { label: 'Jarak', value: `${formatDistance(record.distance)} dari titik kantor` },
         { label: 'Jam kerja', value: scheduleLabel },
-        { label: 'Selfie', value: 'Tersimpan · terenkripsi' },
+        { label: 'Selfie', value: record.queued ? 'Tersimpan di HP · terenkripsi' : 'Tersimpan · terenkripsi' },
+        ...(record.queued ? [{ label: 'Pengiriman', value: 'Menunggu koneksi · terkirim otomatis' }] : []),
       ]}
       note={
         late === null

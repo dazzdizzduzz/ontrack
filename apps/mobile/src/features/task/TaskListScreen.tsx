@@ -16,6 +16,7 @@ import { BottomNav } from '@/components/ui/BottomNav';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { mainTabs } from '@/components/ui/mainTabs';
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { textStyle } from '@/theme/text';
 import { TaskCard } from './TaskCard';
 import { emptyFilters, FilterSheet, type DueFilter, type TaskFilters } from './TaskSheets';
@@ -91,10 +92,10 @@ export function TaskListScreen() {
   return (
     <View style={styles.screen}>
       {offline && (
-        <View accessibilityRole="alert" style={[styles.banner, { paddingTop: top + space[12] }]}>
-          <Icon name="wifi-off" size={20} />
-          <Text style={styles.bannerText}>Kamu sedang offline. Absensi akan disinkronkan saat tersambung.</Text>
-        </View>
+        <OfflineBanner
+          message="Kamu sedang offline. Absensi akan disinkronkan saat tersambung."
+          paddingTop={top + space[12]}
+        />
       )}
       <View style={[styles.bar, !offline && { paddingTop: top }]}>
         <View style={styles.barRow}>
@@ -192,19 +193,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: color.bg.canvas,
-  },
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space[12],
-    paddingHorizontal: space[16],
-    paddingBottom: space[12],
-    backgroundColor: color.bg.inverse,
-  },
-  bannerText: {
-    ...textStyle('bodyS'),
-    flex: 1,
-    color: color.text.inverse,
   },
   bar: {
     borderBottomWidth: 1,

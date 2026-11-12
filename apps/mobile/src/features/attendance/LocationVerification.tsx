@@ -77,6 +77,8 @@ type LocationVerificationProps = {
   outsideMessage: string;
   /** Peta lebih pendek agar konten di bawahnya muat (M30). */
   compact?: boolean;
+  /** M64: tanpa internet, lokasi disimpan di HP dan dikirim saat online. */
+  offline?: boolean;
 };
 
 /** Langkah 1 Clock In / Clock Out: peta, status geofence, dan peringatan (M03, M07, M29, M32, M35). */
@@ -85,6 +87,7 @@ export function LocationVerification({
   action,
   outsideMessage,
   compact,
+  offline,
 }: LocationVerificationProps) {
   const { location, geofence, testMode } = check;
   const pending = location.state === 'siap' ? null : unavailable[location.state];
@@ -110,7 +113,8 @@ export function LocationVerification({
             {pending?.title}
             {geofence === 'gps-lemah' && 'Lokasi belum akurat'}
             {geofence === 'luar-area' && `Kamu berada ${distanceLabel} dari kantor`}
-            {geofence === 'dalam-area' && `${sampleOffice.name} · ${distanceLabel} dari titik`}
+            {geofence === 'dalam-area' &&
+              (offline ? 'Lokasi dari GPS · tersimpan di HP' : `${sampleOffice.name} · ${distanceLabel} dari titik`)}
           </Text>
           <Text style={styles.statusMeta}>
             {pending?.meta}
@@ -119,7 +123,9 @@ export function LocationVerification({
             {geofence === 'luar-area' &&
               `Batas radius ${sampleOffice.radiusMeters} m · Akurasi GPS ${accuracyLabel}`}
             {geofence === 'dalam-area' &&
-              `Akurasi GPS ${accuracyLabel} · radius ${sampleOffice.radiusMeters} m`}
+              (offline
+                ? 'Jam dicatat saat kamu menekan tombol, bukan saat terkirim'
+                : `Akurasi GPS ${accuracyLabel} · radius ${sampleOffice.radiusMeters} m`)}
           </Text>
         </View>
         {geofence ? (

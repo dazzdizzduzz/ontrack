@@ -18,6 +18,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ChipButton } from '@/components/ui/Chip';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Dialog } from '@/components/ui/Dialog';
 import { Drawer } from '@/components/ui/Drawer';
 import { TextareaField } from '@/components/ui/Field';
@@ -49,7 +50,8 @@ export type LeavePreview =
   | 'tolak'
   | 'tolak-kosong'
   | 'tolak-terisi'
-  | 'ditolak';
+  | 'ditolak'
+  | 'kosong';
 
 type ToastState = { title: string; body: string };
 
@@ -100,6 +102,12 @@ function initialRequests(preview?: LeavePreview): ApprovalRequest[] {
   if (preview === 'ditolak') {
     return sampleRequests.map((row) =>
       row.id === MADE ? withDecision(row, 'ditolak', sampleDecisionAt, sampleRejectReasons.made) : row,
+    );
+  }
+  if (preview === 'kosong') {
+    // W105: semua pengajuan contoh sudah ditinjau.
+    return sampleRequests.map((row) =>
+      row.status === 'menunggu' ? withDecision(row, 'disetujui', sampleDecisionAt) : row,
     );
   }
   return sampleRequests;
@@ -217,7 +225,9 @@ export function LeaveApproval({ preview }: { preview?: LeavePreview }) {
         <div className={shared.titleBlock}>
           <h1 className={shared.title}>Izin &amp; Cuti</h1>
           <p className={shared.subtitle}>
-            {pending} pengajuan menunggu persetujuan · {samplePeriod}
+            {pending > 0
+              ? `${pending} pengajuan menunggu persetujuan · ${samplePeriod}`
+              : 'Tidak ada pengajuan yang menunggu persetujuan'}
           </p>
         </div>
         {/* MOCK: ekspor PDF izin belum ada di kontrak. */}
@@ -331,8 +341,16 @@ export function LeaveApproval({ preview }: { preview?: LeavePreview }) {
               })}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={6} className={shared.empty}>
-                    Tidak ada pengajuan dengan status ini.
+                  <td colSpan={6} className={shared.emptyCell}>
+                    {filter === 'menunggu' ? (
+                      <EmptyState icon="check-ink" title="Semua pengajuan sudah ditinjau">
+                        Pengajuan baru dari karyawan akan muncul di sini, dan kamu akan menerima notifikasi.
+                      </EmptyState>
+                    ) : (
+                      <EmptyState icon="calendar" title="Belum ada pengajuan dengan status ini">
+                        Pengajuan yang sudah diputuskan akan tercatat di sini.
+                      </EmptyState>
+                    )}
                   </td>
                 </tr>
               )}

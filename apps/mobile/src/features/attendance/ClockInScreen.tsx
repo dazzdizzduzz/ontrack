@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { useAttendance } from './AttendanceProvider';
 import {
   recordFor,
@@ -32,7 +33,7 @@ type CameraStatus = 'memuat' | 'siap' | 'gagal';
 
 /**
  * M03 · Clock In, M27/M31 · Pratinjau Selfie, M29 · GPS Lemah, M30 · Selfie Gagal,
- * M07 · Ditolak (Luar Area). Tanpa `scenario`, jam, GPS, dan kamera depan dari perangkat;
+ * M07 · Ditolak (Luar Area), M64 · Offline. Tanpa `scenario`, jam, GPS, dan kamera depan dari perangkat;
  * dengan `scenario` (lewat `?state=`), layar memakai contoh Figma (lihat data.ts).
  */
 export function ClockInScreen({ scenario }: { scenario?: ClockInScenario }) {
@@ -42,6 +43,9 @@ export function ClockInScreen({ scenario }: { scenario?: ClockInScenario }) {
   const check = useLocationCheck(scenario ? sample : undefined, { withCamera: true });
   const { live, geofence, location, distance } = check;
   const now = useNow();
+  // MOCK: status jaringan belum dibaca dari perangkat (perlu @react-native-community/netinfo);
+  // offline hanya lewat `?state=offline` (M64).
+  const offline = scenario === 'offline';
 
   const [step, setStep] = useState<SelfieStep>('kamera');
   const [attempts, setAttempts] = useState(0);
@@ -106,7 +110,8 @@ export function ClockInScreen({ scenario }: { scenario?: ClockInScenario }) {
     // MOCK: foto dan lokasi belum dikirim ke server; foto hanya ada di cache perangkat.
     // Status dihitung dari jam selfie dan jadwal contoh; saat integrasi, server yang
     // mencatat jam dan menilai ulang.
-    saveClockIn(recordFor(time, distance, date));
+    // M64: saat offline, catatan masuk antrean lokal dan dikirim otomatis saat tersambung.
+    saveClockIn({ ...recordFor(time, distance, date), queued: offline || undefined });
     // Diganti, bukan ditumpuk, supaya tombol kembali tidak membuka kamera lagi.
     router.replace('/clock-in-berhasil');
   }
@@ -124,11 +129,18 @@ export function ClockInScreen({ scenario }: { scenario?: ClockInScenario }) {
         ]}
       >
         <AttendanceTopBar title="Clock In" />
+        {offline && (
+          <OfflineBanner
+            message="Kamu sedang offline. Absen tetap bisa dilakukan dan dikirim otomatis saat tersambung."
+            style={styles.offline}
+          />
+        )}
         <LocationVerification
           check={check}
           action="Clock-in"
           outsideMessage="Kamu di luar radius kantor dan belum punya izin WFH/Dinas Luar hari ini."
           compact={failed}
+          offline={offline}
         />
 
         {geofence === 'dalam-area' && (
@@ -258,6 +270,10 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     gap: space[20],
+    paddingHorizontal: space[24],
+  },
+  offline: {
+    marginHorizontal: -space[24],
     paddingHorizontal: space[24],
   },
   contentCompact: {

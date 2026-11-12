@@ -1,18 +1,22 @@
 import {
+  findMissedClockOut,
   formatClock,
   formatDayDate,
+  formatDayMedium,
   formatDistance,
   formatDuration,
   formatShortDuration,
   greetingFor,
   minutesOfDay,
   parseClockTime,
+  sampleMissedClockOutDays,
 } from '@on-track/core';
 import { color, radius, size, space } from '@on-track/tokens';
 import { router, Stack } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { mainTabs } from '@/components/ui/mainTabs';
@@ -45,13 +49,20 @@ function Stat({ label, value, unit }: { label: string; value: number; unit: stri
   );
 }
 
-export type HomePreview = 'sudah-clock-in' | 'sudah-clock-out';
+export type HomePreview = 'sudah-clock-in' | 'sudah-clock-out' | 'lupa-clock-out';
 
 /** Jam contoh Figma M08 dan M49. */
 const PREVIEW_TIME = '17:44';
 
+/** Hari ini contoh Figma (Kamis, 01/10/2026) untuk mencari clock-out yang terlewat. */
+const SAMPLE_TODAY = '2026-10-01';
+/** Jam contoh M65 (sebelum clock-in). */
+const MORNING_TIME = '08:52';
+
 /**
- * M02 · Home, M08 · Beranda Clock Out setelah clock-in, dan M49 · Sudah Clock Out.
+ * M02 · Home, M08 · Beranda Clock Out setelah clock-in, M49 · Sudah Clock Out, dan M65 · Lupa
+ * Clock-out Kemarin (`lupa-clock-out`). MOCK M65: hanya lewat pratinjau; saat integrasi, riwayat
+ * kemarin dari server dicek dengan `findMissedClockOut`.
  * `preview` (lewat `?state=`) menampilkan contoh Figma tanpa mengubah catatan absensi.
  */
 export function HomeScreen({ preview }: { preview?: HomePreview }) {
@@ -59,7 +70,9 @@ export function HomeScreen({ preview }: { preview?: HomePreview }) {
   const { unreadCount } = useNotifications();
   const attendance = useAttendance();
   const { permissionsGranted } = attendance;
-  const clockIn = preview ? sampleClockIn : attendance.clockIn;
+  const forgot = preview === 'lupa-clock-out';
+  const missed = forgot ? findMissedClockOut(sampleMissedClockOutDays, SAMPLE_TODAY) : undefined;
+  const clockIn = forgot ? null : preview ? sampleClockIn : attendance.clockIn;
   const clockOut =
     preview === 'sudah-clock-out'
       ? clockOutRecordFor(sampleClockIn, PREVIEW_TIME, 42)
@@ -70,14 +83,15 @@ export function HomeScreen({ preview }: { preview?: HomePreview }) {
   // dibaca saat Clock In/Out, jadi jarak ditampilkan dari hasil clock-in atau clock-out.
   const now = useNow();
 
-  const current = preview ? PREVIEW_TIME : formatClock(now, TENANT_TIME_ZONE);
+  const previewTime = forgot ? MORNING_TIME : PREVIEW_TIME;
+  const current = preview ? previewTime : formatClock(now, TENANT_TIME_ZONE);
   // M49: setelah clock-out, jam besar berhenti di jam clock-out.
   const clock = clockOut?.time ?? current;
   // M08: total kerja berjalan sejak clock-in.
   const worked = clockIn ? summaryFor(clockIn, clock).workedMinutes : 0;
   const date = preview ? sampleDate : formatDayDate(now, TENANT_TIME_ZONE);
   const greeting = greetingFor(
-    preview ? (parseClockTime(PREVIEW_TIME) ?? 0) : minutesOfDay(now, TENANT_TIME_ZONE),
+    preview ? (parseClockTime(previewTime) ?? 0) : minutesOfDay(now, TENANT_TIME_ZONE),
   );
 
   function startClockIn() {
@@ -104,6 +118,21 @@ export function HomeScreen({ preview }: { preview?: HomePreview }) {
             <Icon name="bell" size={20} />
           </Pressable>
         </View>
+
+        {missed && (
+          <View style={styles.missed}>
+            <Alert tone="warning" title="Kemarin kamu belum clock-out">
+              {`${formatDayMedium(missed.date)} · clock-in ${missed.clockIn?.replace(':', '.')}. Jam pulang belum tercatat, jadi jam kerja hari itu belum dihitung. Ajukan koreksi ke HRD.`}
+            </Alert>
+            {/* MOCK: alur koreksi jam pulang menunggu keputusan backend; sementara membuka detail absen (M36). */}
+            <Button
+              variant="secondary"
+              fullWidth
+              label="Ajukan koreksi jam pulang"
+              onPress={() => router.push({ pathname: '/riwayat/[tanggal]', params: { tanggal: missed.date } })}
+            />
+          </View>
+        )}
 
         <View style={styles.card}>
           <View style={styles.cardTop}>
@@ -258,6 +287,9 @@ const styles = StyleSheet.create({
     borderColor: color.border.default,
     borderRadius: radius.full,
     backgroundColor: color.bg.surface,
+  },
+  missed: {
+    gap: space[12],
   },
   card: {
     gap: space[16],

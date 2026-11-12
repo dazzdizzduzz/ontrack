@@ -301,3 +301,9 @@
     flex: 1 0 100%;
   }
 }
+
+/* W104: empty state di dalam tabel; tinggi sel mengikuti isinya. */
+.table td.emptyCell {
+  height: auto;
+  padding: 0;
+}

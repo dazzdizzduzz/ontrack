@@ -216,3 +216,29 @@ export const sampleLeaveSyncAttendance: AttendanceDay[] = [
   { date: '2026-10-02', status: 'hadir', clockIn: '08:50', clockOut: '17:00', overtimeMinutes: 0 },
   { date: '2026-10-01', status: 'hadir', clockIn: '08:57', clockOut: '17:03', overtimeMinutes: 0 },
 ];
+
+// ---------------------------------------------------------------------------------------------
+// M65 · Lupa clock-out kemarin.
+
+/**
+ * Hari kerja terakhir sebelum `today` yang punya clock-in tanpa clock-out, bila hari itu tepat hari
+ * kerja sebelumnya. Akhir pekan dilewati, jadi Senin memeriksa Jumat.
+ */
+export function findMissedClockOut(days: AttendanceDay[], today: string): AttendanceDay | undefined {
+  const previous = days
+    .filter((day) => day.date < today && !isWeekend(day.date))
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  return previous?.clockIn && !previous.clockOut ? previous : undefined;
+}
+
+/** "Rabu, 30/09" (M65) */
+export function formatDayMedium(date: string): string {
+  const { day, month, weekday } = parts(date);
+  return `${WEEKDAYS_LONG[weekday]}, ${pad(day)}/${pad(month)}`;
+}
+
+/** MOCK M65: Rabu 30/09 clock-in 08:47 tanpa clock-out. */
+export const sampleMissedClockOutDays: AttendanceDay[] = [
+  { date: '2026-09-29', status: 'hadir', clockIn: '08:50', clockOut: '17:06', overtimeMinutes: 0 },
+  { date: '2026-09-30', status: 'hadir', clockIn: '08:47', overtimeMinutes: 0 },
+];

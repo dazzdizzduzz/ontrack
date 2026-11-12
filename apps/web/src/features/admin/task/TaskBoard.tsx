@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button, ButtonLink } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { TaskCard } from '@/components/ui/TaskCard';
 import { Toast } from '@/components/ui/Toast';
 import shared from '../employees/employees.module.css';
@@ -31,7 +32,7 @@ import styles from './task.module.css';
  * `?state=`: `baru` (W10), `validasi` (W49), `dibuat` (W50), `review` (W51), `selesai` (W52),
  * `revisi` (W53), `lihat` (W99). `?view=daftar` = W46.
  */
-export type TaskBoardPreview = 'baru' | 'validasi' | 'dibuat' | 'review' | 'selesai' | 'revisi' | 'lihat';
+export type TaskBoardPreview = 'baru' | 'validasi' | 'dibuat' | 'review' | 'selesai' | 'revisi' | 'lihat' | 'kosong';
 
 /** Task contoh di kolom Review (W51–W53) dan Team Lead yang me-review. */
 const REVIEW_SAMPLE = 't-feed';
@@ -87,6 +88,8 @@ export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?:
     preview === 'dibuat' && !stored.some((task) => task.id === createdSample.id)
       ? [createdSample, ...stored]
       : stored;
+  // W106: papan kosong.
+  if (preview === 'kosong') tasks = [];
   if (preview === 'selesai') {
     tasks = tasks.map((task) => (task.id === REVIEW_SAMPLE && task.status === 'review' ? { ...task, status: 'done' } : task));
   }
@@ -137,7 +140,7 @@ export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?:
         <div className={shared.titleBlock}>
           <h1 className={shared.title}>Task Board</h1>
           <p className={shared.subtitle}>
-            {active} task aktif · {overdue} overdue · {PERIOD}
+            {tasks.length === 0 ? `Belum ada task · ${PERIOD}` : `${active} task aktif · ${overdue} overdue · ${PERIOD}`}
           </p>
         </div>
         <div className={styles.headerActions}>
@@ -185,7 +188,20 @@ export function TaskBoard({ preview, view: initialView = 'kanban' }: { preview?:
         </div>
       </div>
 
-      {view === 'kanban' ? (
+      {tasks.length === 0 ? (
+        <EmptyState
+          icon="task"
+          title="Belum ada task bulan ini"
+          action={
+            <Button variant="secondary" compact onClick={() => setFormOpen(true)}>
+              Task baru
+              <Image src="/icons/arrow-right.svg" alt="" width={20} height={20} unoptimized />
+            </Button>
+          }
+        >
+          Buat task pertama, pilih proyek, lalu tugaskan ke anggota tim.
+        </EmptyState>
+      ) : view === 'kanban' ? (
         <div className={styles.board}>
           {taskStatusOrder.map((status) => {
             const column = visible.filter((task) => task.status === status);

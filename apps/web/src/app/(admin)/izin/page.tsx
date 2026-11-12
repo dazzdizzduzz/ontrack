@@ -12,11 +12,12 @@ const previews: LeavePreview[] = [
   'tolak-kosong',
   'tolak-terisi',
   'ditolak',
+  'kosong',
 ];
 
 /**
  * W03. Contoh lewat `?state=`: `detail` (W40), `disetujui` (W41), `tolak` (W04), `tolak-kosong`
- * (W42), `tolak-terisi` (W45), dan `ditolak` (W43).
+ * (W42), `tolak-terisi` (W45), `ditolak` (W43), dan `kosong` (W105).
  */
 export default async function LeaveApprovalPage({ searchParams }: PageProps) {
   const { state } = await searchParams;

@@ -59,7 +59,8 @@ export type ClockInScenario =
   | 'mencari'
   | 'izin-ditolak'
   | 'gps-mati'
-  | 'lokasi-gagal';
+  | 'lokasi-gagal'
+  | 'offline';
 
 export const clockInScenarios: ClockInScenario[] = [
   'dalam-area',
@@ -72,6 +73,7 @@ export const clockInScenarios: ClockInScenario[] = [
   'izin-ditolak',
   'gps-mati',
   'lokasi-gagal',
+  'offline',
 ];
 
 type ScenarioSample = {
@@ -101,6 +103,8 @@ export const scenarioSamples: Record<ClockInScenario, ScenarioSample> = {
   },
   'gps-mati': { distance: 0, accuracy: 0, time: '08:52', pending: { state: 'mati' } },
   'lokasi-gagal': { distance: 0, accuracy: 0, time: '08:52', pending: { state: 'gagal' } },
+  // M64: GPS tetap terbaca tanpa internet; absen disimpan di HP lalu dikirim saat online.
+  offline: { distance: 42, accuracy: 8, time: '08:52' },
 };
 
 export function geofenceOf(sample: Pick<ScenarioSample, 'distance' | 'accuracy'>): GeofenceResult {
@@ -113,6 +117,8 @@ export type ClockInRecord = {
   time: string;
   distance: number;
   status: ReturnType<typeof clockInStatus>;
+  /** M64: tersimpan di HP saat offline, menunggu dikirim. */
+  queued?: boolean;
 };
 
 /** Status otomatis dari jadwal F02 (FR-08). */
